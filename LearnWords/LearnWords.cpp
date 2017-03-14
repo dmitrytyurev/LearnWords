@@ -566,30 +566,9 @@ void print_masked_translation(const char* _str, int symbolsToShowNum)
 	}
 }
 
-void print_close_words_to(const char* word, int length, int srcWordIndex)
+void get_separate_words_from_translation(const char* __str, std::vector<std::string>& outWords)
 {
-	if (length < MIN_CLOSE_WORD_LEN)
-		return;
-	char wordPartToFind[128];
-
-	strncpy_s(wordPartToFind, word, length);
-	wordPartToFind[length] = 0;
-	wordPartToFind[MIN_CLOSE_WORD_LEN] = 0;
-
-	for (int i = 0; i < wordsOnDisk._words.size(); ++i)
-	{
-		if (i == srcWordIndex)
-			continue;
-		WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
-
-		if (strstr(w.translation.c_str(), wordPartToFind))
-			printf("%s %s\n", w.word.c_str(), w.translation.c_str());
-	}
-}
-
-void print_close_words_by_translation(const char* __str, int srcWordIndex)
-{
-	puts("\n\n\n\n");
+	outWords.clear();
 	const unsigned char* _str = reinterpret_cast<const unsigned char*>(__str);
 	const unsigned char* str = _str;
 	bool isInTranscription = false;
@@ -618,7 +597,8 @@ void print_close_words_by_translation(const char* __str, int srcWordIndex)
 			if (isInWord == true)
 			{
 				endIndex = str - _str;
-				print_close_words_to(__str + beginIndex, endIndex - beginIndex, srcWordIndex);
+				std::string s(__str + beginIndex, endIndex - beginIndex);
+				outWords.push_back(s);
 			}
 			isInWord = false;
 		}
@@ -627,7 +607,49 @@ void print_close_words_by_translation(const char* __str, int srcWordIndex)
 	if (isInWord == true)
 	{
 		endIndex = str - _str;
-		print_close_words_to(__str + beginIndex, endIndex - beginIndex, srcWordIndex);
+		std::string s(__str + beginIndex, endIndex - beginIndex);
+		outWords.push_back(s);
+	}
+}
+
+void print_close_words_to(const char* word, int length, int srcWordIndex)
+{
+	if (length < MIN_CLOSE_WORD_LEN)
+		return;
+	int cutLen = std::max(MIN_CLOSE_WORD_LEN, length - 4);
+	char wordPartToFind[128];
+
+	strncpy_s(wordPartToFind, word, length);
+	wordPartToFind[length] = 0;
+	wordPartToFind[cutLen] = 0;
+
+	for (int i = 0; i < wordsOnDisk._words.size(); ++i)
+	{
+		if (i == srcWordIndex)
+			continue;
+		WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
+
+		std::vector<std::string> words;
+		get_separate_words_from_translation(w.translation.c_str(), words);
+
+		for (int i2 = 0; i2 < words.size(); ++i2)
+		{
+			if (strncmp(words[i2].c_str(), wordPartToFind, cutLen) == 0)
+				printf("%s %s\n", w.word.c_str(), w.translation.c_str());
+		}
+	}
+}
+
+void print_close_words_by_translation(const char* str, int srcWordIndex)
+{
+	puts("\n\n\n\n");
+
+	std::vector<std::string> words;
+	get_separate_words_from_translation(str, words);
+
+	for (int i=0; i<words.size(); ++i)
+	{
+		print_close_words_to(words[i].c_str(), words[i].length(), srcWordIndex);
 	}
 }
 
