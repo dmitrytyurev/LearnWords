@@ -31,6 +31,7 @@ const int ADDITIONAL_REPEAT_THRESHOLD_DAYS = 3;  // √раница в дн€х между словами
 const int RIGHT_ANSWERS_FALLBACK = 7;            // Ќомер шага, на который откатываетс€ слово при check_by_time, если помним неуверенно
 const int RAND_REPEATS_GLOBAL_N = 8;             // ≈сли rightAnswersNum >= этому значению, то при check_by_time при верном ответе слово помещаетс€ в середину очереди рандомной проверки
 const int MIN_CLOSE_WORD_LEN = 5;                // —только первых символов берЄтс€ из слов перевода, чтобы искать слова с похожими переводами
+const float PERCENT_FORGOT_INSERT_QUEUE = 0.3f;  // ѕроцент от длины очереди неизученных слов куда вставим забытое слово
 
 const char* logFileName = "log.log";
 
@@ -106,11 +107,12 @@ struct WordsOnDisk
 
 struct WordToLearn
 {
-	WordToLearn() : _index(0), _counterShown(0), _localRightAnswersNum(0) {}
+	WordToLearn() : _index(0), _counterShown(0), _localRightAnswersNum(0), _wasLastFail(0) {}
 
-	int _index;                 // »ндекс изучаемого слова в WordsOnDisk::_words
-	int _counterShown;          // «апомненное значение счЄтчика показов слов в момент показа данного слова (используетс€, чтобы пон€ть было ли показано с тех пор достаточное количество других слов)
-	int _localRightAnswersNum;  //  оличество непрерывных правильных ответов
+	int  _index;                 // »ндекс изучаемого слова в WordsOnDisk::_words
+	int  _counterShown;          // «апомненное значение счЄтчика показов слов в момент показа данного слова (используетс€, чтобы пон€ть было ли показано с тех пор достаточное количество других слов)
+	int  _localRightAnswersNum;  //  оличество непрерывных правильных ответов
+	bool _wasLastFail;           // true, если при последней проверке слова нажали стрелку вниз (забыли слово)
 };
 
 
@@ -480,13 +482,14 @@ int enter_number_from_console()
 }
 
 
-void put_to_queue(std::vector<WordToLearn>& queue, const WordToLearn& wordToPut)
+void put_to_queue(std::vector<WordToLearn>& queue, const WordToLearn& wordToPut, float percent)
 {
-	// ¬ставл€ем ли в предпоследнюю, либо в последнюю позицию рандомно
-	if (queue.size() > 0 && rand_int(0, 100) < 50)
-		queue.insert(queue.begin() + (queue.size() - 1), wordToPut);
-	else
-		queue.push_back(wordToPut);
+	int pos = static_cast<int>(queue.size() * percent);
+
+	if (pos > 0 && rand_int(0, 100) < 50)
+		--pos;
+
+	queue.insert(queue.begin() + pos, wordToPut);
 }
 
 void print_queue_state(const std::vector<WordToLearn>& queue)
@@ -653,6 +656,14 @@ void print_close_words_by_translation(const char* str, int srcWordIndex)
 	}
 }
 
+int get_show_word_not_early_than(bool wasLastFail)
+{
+	if (wasLastFail == false)
+		return SHOW_WORD_NOT_EARLY_THAN;
+
+	return static_cast<int>(PERCENT_FORGOT_INSERT_QUEUE * SHOW_WORD_NOT_EARLY_THAN);
+}
+
 void learning_words()
 {
 	forgottenWordsIndices.clear();
@@ -771,14 +782,14 @@ void learning_words()
 		} fromWhatSource = FromWhatSource::DEFAULT;
 
 		int wordToRepeatIndex = get_word_to_repeat();
-
-		if (counterWordsShown - unlearned[0]._counterShown >= SHOW_WORD_NOT_EARLY_THAN  ||  (learned.size() == 0  &&  wordToRepeatIndex == -1))
+		
+		if (counterWordsShown - unlearned[0]._counterShown >= get_show_word_not_early_than(unlearned[0]._wasLastFail) ||  (learned.size() == 0  &&  wordToRepeatIndex == -1))
 		{
 			fromWhatSource = FromWhatSource::FROM_UNLEARNED_QUEUE;
 			wordToLearn = unlearned[0];
 			unlearned.erase(unlearned.begin());
 		}
-		else if (wordToRepeatIndex == -1  ||  (learned.size() > 0  &&  counterWordsShown - learned[0]._counterShown >= SHOW_WORD_NOT_EARLY_THAN))
+		else if (wordToRepeatIndex == -1  ||  (learned.size() > 0  &&  counterWordsShown - learned[0]._counterShown >= get_show_word_not_early_than(learned[0]._wasLastFail)))
 		{
 			fromWhatSource = FromWhatSource::FROM_LEARNED_QUEUE;
 			wordToLearn = learned[0];
@@ -814,19 +825,22 @@ void learning_words()
 				switch (fromWhatSource)
 				{
 				case FromWhatSource::FROM_UNLEARNED_QUEUE:
-					if (++(wordToLearn._localRightAnswersNum) == TIMES_TO_GUESS_TO_LEARNED)
+					if ((wordToLearn._wasLastFail == false)  &&  (++(wordToLearn._localRightAnswersNum) == TIMES_TO_GUESS_TO_LEARNED))
 					{
-						put_to_queue(learned, wordToLearn);
+						put_to_queue(learned, wordToLearn, 1);
 						w.rightAnswersNum = 1;
 						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, false);
 						if (unlearned.size() == 0)
 							return;
 					}
 					else
-						put_to_queue(unlearned, wordToLearn);
+					{
+						wordToLearn._wasLastFail = false;
+						put_to_queue(unlearned, wordToLearn, 1);
+					}
 					break;
 				case FromWhatSource::FROM_LEARNED_QUEUE:
-					put_to_queue(learned, wordToLearn);
+					put_to_queue(learned, wordToLearn, 1);
 					break;
 				case FromWhatSource::FROM_RANDOM_REPEAT_LIST:
 					put_word_to_end_of_random_repeat_queue(w);
@@ -842,13 +856,15 @@ void learning_words()
 					{
 					case FromWhatSource::FROM_UNLEARNED_QUEUE:
 						wordToLearn._localRightAnswersNum = 0;
-						put_to_queue(unlearned, wordToLearn);
+						wordToLearn._wasLastFail = true;
+						put_to_queue(unlearned, wordToLearn, PERCENT_FORGOT_INSERT_QUEUE);
 						break;
 					case FromWhatSource::FROM_LEARNED_QUEUE:
 						w.clear_all();
 						wordsOnDisk.save_to_file();
 						wordToLearn._localRightAnswersNum = 0;
-						put_to_queue(unlearned, wordToLearn);
+						wordToLearn._wasLastFail = true;
+						put_to_queue(unlearned, wordToLearn, PERCENT_FORGOT_INSERT_QUEUE);
 						break;
 					case FromWhatSource::FROM_RANDOM_REPEAT_LIST:
 						forgottenWordsIndices.push_back(wordToRepeatIndex);
