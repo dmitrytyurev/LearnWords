@@ -93,6 +93,12 @@ struct WordsOnDisk
 								   // ≈сли данное слово было вставлено не в конец, то к нему прибавл€етс€ RANDOM_REPEAT_FLAG в качестве признака
 	};
 
+	struct CompareExcludePair
+	{
+		std::string word1;
+		std::string word2;
+	};
+
 	void load_from_file(const char* fullFileName);
 	void save_to_file();
 	void fill_date_of_repeate_and_save(WordInfo& w, time_t currentTime, bool isHardLearned);
@@ -102,6 +108,7 @@ struct WordsOnDisk
 	bool is_digit(char c);
 
 	std::vector<WordInfo> _words;
+	std::vector<CompareExcludePair> _compareExcludePairs;
 	std::string           _fullFileName;
 };
 
@@ -126,7 +133,7 @@ void log_random_test_wors();
 int get_word_to_repeat();
 void put_word_to_end_of_random_repeat_queue(WordsOnDisk::WordInfo& w);
 void set_word_as_just_hardly_learned(WordsOnDisk::WordInfo& w);
-void print_close_words_by_translation(const char* __str, int srcWordIndex);
+void print_close_words_by_translation(int srcWordIndex);
 
 
 const char* get_time_in_text(time_t curTime)
@@ -241,6 +248,38 @@ void WordsOnDisk::load_from_file(const char* fullFileName)
 	}
 
 	int parseIndex = 0;
+
+	// „итаем пары исключений
+	while (true)
+	{
+		CompareExcludePair cep;
+
+		cep.word1 = load_string_from_array(buffer, &parseIndex);
+		if (cep.word1.length() == 0)         // ѕри поиске начала строки был встречен конец файла (например, файл заканчиваетс€ пустой строкой)
+		{
+			printf("Sintax error in word %s", cep.word1.c_str());
+			exit(1);
+		}
+
+		if (strcmp(cep.word1.c_str(), "Main block") == 0)
+			break;
+
+		cep.word2 = load_string_from_array(buffer, &parseIndex);
+
+		// «анести CompareExcludePair в вектор
+		_compareExcludePairs.push_back(cep);
+
+		while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd)
+			++parseIndex;
+
+		if (buffer[parseIndex] == 0)
+		{
+			printf("Sintax error in word");
+			exit(1);
+		}
+	}
+
+	// „итаем основной блок слов
 	while (true)
 	{
 		WordInfo wi;
@@ -306,9 +345,19 @@ void WordsOnDisk::save_to_file()
 	fopen_s(&f, _fullFileName.c_str(), "wt");
 	if (f == NULL)
 	{
-		printf("Can't  create file %s\n", _fullFileName.c_str());
+		printf("Can't create file %s\n", _fullFileName.c_str());
 		exit(1);
 	}
+
+	for (int i = 0; i < _compareExcludePairs.size(); ++i)
+	{
+		fprintf(f, "\"%s\" \"%s\"\n",
+			_compareExcludePairs[i].word1.c_str(),
+			_compareExcludePairs[i].word2.c_str());
+	}
+
+	fprintf(f, "\"Main block\"\n");
+
 	for (int i = 0; i < _words.size(); ++i)
 	{
 		if (_words[i].rightAnswersNum == 0  && 
@@ -615,14 +664,34 @@ void get_separate_words_from_translation(const char* __str, std::vector<std::str
 	}
 }
 
-void print_close_words_to(const char* word, int length, int srcWordIndex)
+bool can_compare_two_words(const char* word1, const char* word2)
 {
+	for (int i = 0; i < wordsOnDisk._compareExcludePairs.size(); ++i)
+	{
+		WordsOnDisk::CompareExcludePair& cep = wordsOnDisk._compareExcludePairs[i];
+	
+		if (strcmp(cep.word1.c_str(), word2) == 0 && strcmp(cep.word2.c_str(), word1) == 0)
+			return false;
+	}
+	return true;
+}
+
+struct CloseWordFound
+{
+	std::string rusWordSrc;  // ƒл€ какого русского слова было найдено английское слово с похожим переводом
+	std::string engWord;     //  акой английское слово было найдено
+	std::string rusWordDst;  //  акой русский перевод этого английского слова был найден
+};
+
+void collect_close_words_to(std::vector<CloseWordFound>& closeWordsFound, std::string& rusWord, int srcWordIndex, const char* engWord)
+{
+	int length = rusWord.length();
 	if (length < MIN_CLOSE_WORD_LEN)
 		return;
 	int cutLen = std::max(MIN_CLOSE_WORD_LEN, length - 4);
 	char wordPartToFind[128];
 
-	strncpy_s(wordPartToFind, word, length);
+	strncpy_s(wordPartToFind, rusWord.c_str(), length);
 	wordPartToFind[length] = 0;
 	wordPartToFind[cutLen] = 0;
 
@@ -632,28 +701,41 @@ void print_close_words_to(const char* word, int length, int srcWordIndex)
 			continue;
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
 
+		if (!can_compare_two_words(w.word.c_str(), engWord))
+			continue;
+
 		std::vector<std::string> words;
 		get_separate_words_from_translation(w.translation.c_str(), words);
 
 		for (int i2 = 0; i2 < words.size(); ++i2)
 		{
 			if (strncmp(words[i2].c_str(), wordPartToFind, cutLen) == 0)
-				printf("%s %s\n", w.word.c_str(), w.translation.c_str());
+			{
+				CloseWordFound cwf;
+				cwf.engWord    = w.word;
+				cwf.rusWordSrc = rusWord;
+				cwf.rusWordDst = words[i2];
+				closeWordsFound.push_back(cwf);
+			}
 		}
 	}
 }
 
-void print_close_words_by_translation(const char* str, int srcWordIndex)
+void print_close_words_by_translation(int srcWordIndex)
 {
 	puts("\n\n\n\n");
 
-	std::vector<std::string> words;
-	get_separate_words_from_translation(str, words);
+	const WordsOnDisk::WordInfo& w = wordsOnDisk._words[srcWordIndex];
 
+	std::vector<std::string> words;
+	get_separate_words_from_translation(w.translation.c_str(), words);
+
+	std::vector<CloseWordFound> closeWordsFound;
 	for (int i=0; i<words.size(); ++i)
-	{
-		print_close_words_to(words[i].c_str(), words[i].length(), srcWordIndex);
-	}
+		collect_close_words_to(closeWordsFound, words[i], srcWordIndex, w.word.c_str());
+
+	for (int i = 0; i<closeWordsFound.size(); ++i)
+		printf("%d %s %s %s\n", i, closeWordsFound[i].engWord.c_str(), closeWordsFound[i].rusWordSrc.c_str(), closeWordsFound[i].rusWordDst.c_str());
 }
 
 int get_show_word_not_early_than(bool wasLastFail)
@@ -920,7 +1002,7 @@ void repeating_words_just_learnded_and_forgotten()
 				return;
 		} while (c != ' ');
 		printf("\n%s\n\n\n  Arrow up   - yes! :)\n  Arrow down - no :(\n", w.translation.c_str());
-		print_close_words_by_translation(w.translation.c_str(), wordsToRepeat[i]);
+		print_close_words_by_translation(wordsToRepeat[i]);
 
 		while (true)
 		{
@@ -981,7 +1063,7 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 				return;
 		} while (c != ' ');
 		printf("\n%s\n\n\n  Arrow up   - yes! :)\n  Arrow down - no :(\n  Arrow right - yes, but difficult :(\n", w.translation.c_str());
-		print_close_words_by_translation(w.translation.c_str(), wordsToRepeat[i]);
+		print_close_words_by_translation(wordsToRepeat[i]);
 
 		while (true)
 		{
@@ -1164,7 +1246,7 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 				return;
 		} while (c != ' ');
 		printf("\n%s\n\n\n  Arrow up   - yes! :)\n  Arrow down - no :(\n  Arrow right - yes, but difficult :(\n", w.translation.c_str());
-		print_close_words_by_translation(w.translation.c_str(), wordToRepeatIndex);
+		print_close_words_by_translation(wordToRepeatIndex);
 
 		while (true)
 		{
