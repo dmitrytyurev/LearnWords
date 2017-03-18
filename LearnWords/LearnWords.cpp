@@ -767,7 +767,7 @@ void CloseTranslationWordsManager::print_close_words_by_translation()
 		collect_close_words_to(closeWordsFound, words[i], srcWordIndex, w.word.c_str());
 
 	for (int i = 0; i<closeWordsFound.size(); ++i)
-		printf("%d %s %s %s\n", i+1, closeWordsFound[i].engWord.c_str(), closeWordsFound[i].rusWordSrc.c_str(), closeWordsFound[i].rusWordDst.c_str());
+		printf("%d. %s -> %s\n", i+1, closeWordsFound[i].engWord.c_str(), closeWordsFound[i].rusWordDst.c_str());
 }
 
 void CloseTranslationWordsManager::add_exclusion(int n)
