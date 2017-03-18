@@ -628,7 +628,7 @@ private:
 	{
 		std::string rusWordSrc;  // Для какого русского слова было найдено английское слово с похожим переводом
 		std::string engWord;     // Какой английское слово было найдено
-		std::string rusWordDst;  // Какой русский перевод этого английского слова был найден
+		std::string translation; // Полный перевод этого английского слова
 	};
 
 	void add_exclusion(int n);
@@ -745,10 +745,11 @@ void CloseTranslationWordsManager::collect_close_words_to(std::vector<CloseWordF
 			if (strncmp(words[i2].c_str(), wordPartToFind, cutLen) == 0)
 			{
 				CloseWordFound cwf;
-				cwf.engWord    = w.word;
-				cwf.rusWordSrc = rusWord;
-				cwf.rusWordDst = words[i2];
+				cwf.engWord     = w.word;
+				cwf.rusWordSrc  = rusWord;
+				cwf.translation = w.translation;
 				closeWordsFound.push_back(cwf);
+				break;
 			}
 		}
 	}
@@ -767,7 +768,7 @@ void CloseTranslationWordsManager::print_close_words_by_translation()
 		collect_close_words_to(closeWordsFound, words[i], srcWordIndex, w.word.c_str());
 
 	for (int i = 0; i<closeWordsFound.size(); ++i)
-		printf("%d. %s -> %s\n", i+1, closeWordsFound[i].engWord.c_str(), closeWordsFound[i].rusWordDst.c_str());
+		printf("%d. %s: %s\n", i+1, closeWordsFound[i].engWord.c_str(), closeWordsFound[i].translation.c_str());
 }
 
 void CloseTranslationWordsManager::add_exclusion(int n)
