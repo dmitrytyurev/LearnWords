@@ -621,8 +621,7 @@ class CloseTranslationWordsManager  // FIXME!!! избавиться от прямого использова
 public:
 	CloseTranslationWordsManager(int wordIndex) : srcWordIndex(wordIndex) {}
 	void print_close_words_by_translation();
-	void add_exclusion(int n);
-	void add_close_eng_word_to_translation(int n);
+	void process_user_input(char c);
 
 private:
 	struct CloseWordFound
@@ -632,8 +631,11 @@ private:
 		std::string rusWordDst;  // Какой русский перевод этого английского слова был найден
 	};
 
+	void add_exclusion(int n);
+	void add_close_eng_word_to_translation(int n);
 	void get_separate_words_from_translation(const char* __str, std::vector<std::string>& outWords);
-	bool can_compare_two_words(const char* word1, const char* word2);
+	bool is_word_in_filter_already(const char* word1, const char* word2);
+	bool is_word_appended_to_translation_already(const std::string& engWord);
 	void collect_close_words_to(std::vector<CloseWordFound>& closeWordsFound, std::string& rusWord, int srcWordIndex, const char* engWord);
 
 private:
@@ -688,18 +690,28 @@ void CloseTranslationWordsManager::get_separate_words_from_translation(const cha
 	}
 }
 
-bool CloseTranslationWordsManager::can_compare_two_words(const char* word1, const char* word2)
+bool CloseTranslationWordsManager::is_word_in_filter_already(const char* word1, const char* word2)
 {
 	for (int i = 0; i < wordsOnDisk._compareExcludePairs.size(); ++i)
 	{
 		WordsOnDisk::CompareExcludePair& cep = wordsOnDisk._compareExcludePairs[i];
 	
 		if (strcmp(cep.word1.c_str(), word2) == 0 && strcmp(cep.word2.c_str(), word1) == 0)
-			return false;
+			return true;
 	}
-	return true;
+	return false;
 }
 
+
+bool CloseTranslationWordsManager::is_word_appended_to_translation_already(const std::string& engWord)
+{
+	WordsOnDisk::WordInfo& wSrc = wordsOnDisk._words[srcWordIndex];
+
+	if (strstr(wSrc.translation.c_str(), engWord.c_str()))
+		return true;
+
+	return false;
+}
 
 void CloseTranslationWordsManager::collect_close_words_to(std::vector<CloseWordFound>& closeWordsFound, std::string& rusWord, int srcWordIndex, const char* engWord)
 {
@@ -719,7 +731,10 @@ void CloseTranslationWordsManager::collect_close_words_to(std::vector<CloseWordF
 			continue;
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
 
-		if (!can_compare_two_words(w.word.c_str(), engWord))
+		if (is_word_in_filter_already(w.word.c_str(), engWord))
+			continue;
+
+		if (is_word_appended_to_translation_already(w.word))
 			continue;
 
 		std::vector<std::string> words;
@@ -752,11 +767,13 @@ void CloseTranslationWordsManager::print_close_words_by_translation()
 		collect_close_words_to(closeWordsFound, words[i], srcWordIndex, w.word.c_str());
 
 	for (int i = 0; i<closeWordsFound.size(); ++i)
-		printf("%d %s %s %s\n", i, closeWordsFound[i].engWord.c_str(), closeWordsFound[i].rusWordSrc.c_str(), closeWordsFound[i].rusWordDst.c_str());
+		printf("%d %s %s %s\n", i+1, closeWordsFound[i].engWord.c_str(), closeWordsFound[i].rusWordSrc.c_str(), closeWordsFound[i].rusWordDst.c_str());
 }
 
 void CloseTranslationWordsManager::add_exclusion(int n)
 {
+	if (n >= closeWordsFound.size())
+		return;
 	const WordsOnDisk::WordInfo& w = wordsOnDisk._words[srcWordIndex];
 
 	WordsOnDisk::CompareExcludePair cep;
@@ -767,6 +784,8 @@ void CloseTranslationWordsManager::add_exclusion(int n)
 
 void CloseTranslationWordsManager::add_close_eng_word_to_translation(int n)
 {
+	if (n >= closeWordsFound.size())
+		return;
 	WordsOnDisk::WordInfo& w = wordsOnDisk._words[srcWordIndex];
 	// Найдём место, куда добавить похожее слово. Это место будет сразу после перевода, для которого мы нашли другое англ. слово с близким переводом
 
@@ -802,6 +821,25 @@ void CloseTranslationWordsManager::add_close_eng_word_to_translation(int n)
 	}
 }
 
+
+void CloseTranslationWordsManager::process_user_input(char c)
+{
+	std::vector<char> codesToAdd = {49, 50, 51, 52, 53, 54, 55, 56, 57};
+	std::vector<char> codesToExclude = {33, 64, 35, 36, 37, 94, 38, 42, 40};
+
+	for (int i=0; i<codesToAdd.size(); ++i)
+		if (codesToAdd[i] == c)
+		{
+			add_close_eng_word_to_translation(i);
+			wordsOnDisk.save_to_file();
+		}
+		else
+			if (codesToExclude[i] == c)
+			{
+				add_exclusion(i);
+				wordsOnDisk.save_to_file();
+			}
+}
 
 
 int get_show_word_not_early_than(bool wasLastFail)
@@ -1067,13 +1105,17 @@ void repeating_words_just_learnded_and_forgotten()
 			if (c == 27)
 				return;
 		} while (c != ' ');
-		printf("\n%s\n\n\n  Arrow up   - yes! :)\n  Arrow down - no :(\n", w.translation.c_str());
-		CloseTranslationWordsManager ctwm(wordsToRepeat[i]);
-		ctwm.print_close_words_by_translation();
 
 		while (true)
 		{
+			clear_screen();
+			printf("\n%s\n", w.word.c_str());
+			printf("\n%s\n\n\n  Arrow up   - yes! :)\n  Arrow down - no :(\n", w.translation.c_str());
+			CloseTranslationWordsManager ctwm(wordsToRepeat[i]);
+			ctwm.print_close_words_by_translation();
+
 			c = getch_filtered();
+			ctwm.process_user_input(c);
 			if (c == 27)
 				return;
 			if (c == 72)  // Стрелка вверх
@@ -1129,14 +1171,17 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 			if (c == 27)
 				return;
 		} while (c != ' ');
-		printf("\n%s\n\n\n  Arrow up   - yes! :)\n  Arrow down - no :(\n  Arrow right - yes, but difficult :(\n", w.translation.c_str());
-		CloseTranslationWordsManager ctwm(wordsToRepeat[i]);
-		ctwm.print_close_words_by_translation();
-//ctwm.add_close_eng_word_to_translation(1);
 
 		while (true)
 		{
+			clear_screen();
+			printf("%d\n\n%s\n", wordsToRepeat.size() - i, w.word.c_str());
+			printf("\n%s\n\n\n  Arrow up   - yes! :)\n  Arrow down - no :(\n  Arrow right - yes, but difficult :(\n", w.translation.c_str());
+			CloseTranslationWordsManager ctwm(wordsToRepeat[i]);
+			ctwm.print_close_words_by_translation();
+
 			c = getch_filtered();
+			ctwm.process_user_input(c);
 			if (c == 27)
 				return;
 			if (c == 72)  // Стрелка вверх
@@ -1314,13 +1359,17 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 			if (c == 27)
 				return;
 		} while (c != ' ');
-		printf("\n%s\n\n\n  Arrow up   - yes! :)\n  Arrow down - no :(\n  Arrow right - yes, but difficult :(\n", w.translation.c_str());
-		CloseTranslationWordsManager ctwm(wordToRepeatIndex);
-		ctwm.print_close_words_by_translation();
 
 		while (true)
 		{
+			clear_screen();
+			printf("%d\n\n%s\n", wordsToRepeatNum - i, w.word.c_str());
+			printf("\n%s\n\n\n  Arrow up   - yes! :)\n  Arrow down - no :(\n  Arrow right - yes, but difficult :(\n", w.translation.c_str());
+			CloseTranslationWordsManager ctwm(wordToRepeatIndex);
+			ctwm.print_close_words_by_translation();
+
 			c = getch_filtered();
+			ctwm.process_user_input(c);
 			if (c == 27)
 				return;
 			if (c == 72)  // Стрелка вверх (помним слово уверенно)
@@ -1352,6 +1401,11 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 
 int main(int argc, char* argv[])
 {
+	//char c = getch_filtered();
+	//int nRet = GetKeyState(VK_SHIFT);
+	//printf("%d %d\n", c, nRet);
+	//return 0;
+
 	std::srand(unsigned(std::time(0)));
 	srand(time(NULL));
 
