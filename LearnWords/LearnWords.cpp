@@ -259,7 +259,7 @@ void WordsOnDisk::load_from_file(const char* fullFileName)
 			exit(1);
 		}
 
-		if (strcmp(cep.word1.c_str(), "Main block") == 0)
+		if (cep.word1 == "Main block")
 			break;
 
 		cep.word2 = load_string_from_array(buffer, &parseIndex);
@@ -634,9 +634,9 @@ private:
 	void add_exclusion(int n);
 	void add_close_eng_word_to_translation(int n);
 	void get_separate_words_from_translation(const char* __str, std::vector<std::string>& outWords);
-	bool is_word_in_filter_already(const char* word1, const char* word2);
+	bool is_word_in_filter_already(const std::string& word1, const std::string& word2);
 	bool is_word_appended_to_translation_already(const std::string& engWord);
-	void collect_close_words_to(std::vector<CloseWordFound>& closeWordsFound, std::string& rusWord, int srcWordIndex, const char* engWord);
+	void collect_close_words_to(std::vector<CloseWordFound>& closeWordsFound, std::string& rusWord, int srcWordIndex, const std::string& engWord);
 
 private:
 	int srcWordIndex;
@@ -690,13 +690,13 @@ void CloseTranslationWordsManager::get_separate_words_from_translation(const cha
 	}
 }
 
-bool CloseTranslationWordsManager::is_word_in_filter_already(const char* word1, const char* word2)
+bool CloseTranslationWordsManager::is_word_in_filter_already(const std::string& word1, const std::string& word2)
 {
 	for (int i = 0; i < wordsOnDisk._compareExcludePairs.size(); ++i)
 	{
 		WordsOnDisk::CompareExcludePair& cep = wordsOnDisk._compareExcludePairs[i];
 	
-		if (strcmp(cep.word1.c_str(), word2) == 0 && strcmp(cep.word2.c_str(), word1) == 0)
+		if (cep.word1 == word2  &&  cep.word2 == word1)
 			return true;
 	}
 	return false;
@@ -713,7 +713,7 @@ bool CloseTranslationWordsManager::is_word_appended_to_translation_already(const
 	return false;
 }
 
-void CloseTranslationWordsManager::collect_close_words_to(std::vector<CloseWordFound>& closeWordsFound, std::string& rusWord, int srcWordIndex, const char* engWord)
+void CloseTranslationWordsManager::collect_close_words_to(std::vector<CloseWordFound>& closeWordsFound, std::string& rusWord, int srcWordIndex, const std::string& engWord)
 {
 	int length = rusWord.length();
 	if (length < MIN_CLOSE_WORD_LEN)
@@ -731,7 +731,7 @@ void CloseTranslationWordsManager::collect_close_words_to(std::vector<CloseWordF
 			continue;
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
 
-		if (is_word_in_filter_already(w.word.c_str(), engWord))
+		if (is_word_in_filter_already(w.word, engWord))
 			continue;
 
 		if (is_word_appended_to_translation_already(w.word))
@@ -765,7 +765,7 @@ void CloseTranslationWordsManager::print_close_words_by_translation()
 	get_separate_words_from_translation(w.translation.c_str(), words);
 
 	for (int i=0; i<words.size(); ++i)
-		collect_close_words_to(closeWordsFound, words[i], srcWordIndex, w.word.c_str());
+		collect_close_words_to(closeWordsFound, words[i], srcWordIndex, w.word);
 
 	for (int i = 0; i<closeWordsFound.size(); ++i)
 		printf("%d. %s: %s\n", i+1, closeWordsFound[i].engWord.c_str(), closeWordsFound[i].translation.c_str());
