@@ -719,11 +719,6 @@ void CloseTranslationWordsManager::collect_close_words_to(std::vector<CloseWordF
 	if (length < MIN_CLOSE_WORD_LEN)
 		return;
 	int cutLen = std::max(MIN_CLOSE_WORD_LEN, length - 4);
-	char wordPartToFind[128];
-
-	strncpy_s(wordPartToFind, rusWord.c_str(), length);
-	wordPartToFind[length] = 0;
-	wordPartToFind[cutLen] = 0;
 
 	for (int i = 0; i < wordsOnDisk._words.size(); ++i)
 	{
@@ -742,7 +737,7 @@ void CloseTranslationWordsManager::collect_close_words_to(std::vector<CloseWordF
 
 		for (int i2 = 0; i2 < words.size(); ++i2)
 		{
-			if (strncmp(words[i2].c_str(), wordPartToFind, cutLen) == 0)
+			if (words[i2].compare(0, cutLen, rusWord, 0, cutLen) == 0)
 			{
 				CloseWordFound cwf;
 				cwf.engWord     = w.word;
