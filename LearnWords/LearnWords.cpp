@@ -804,17 +804,10 @@ void CloseTranslationWordsManager::add_close_eng_word_to_translation(int n)
 			printf("Sintax error 5725875");
 			exit(1);
 		}
-		char buf[128] = ", ";
-		strcat_s(buf, closeWordsFound[n].engWord.c_str());
-		w.translation.insert(place - w.translation.c_str(), buf);
+		w.translation.insert(place - w.translation.c_str(), ", " + closeWordsFound[n].engWord);
 	}
 	else                 // Списка ещё нет, создадим его
-	{
-		char buf[128] = " (";
-		strcat_s(buf, closeWordsFound[n].engWord.c_str());
-		strcat_s(buf, ")");
-		w.translation.insert(place - w.translation.c_str(), buf);
-	}
+		w.translation.insert(place - w.translation.c_str(), " (" + closeWordsFound[n].engWord + ")");
 }
 
 
