@@ -7,6 +7,8 @@
 #include "io.h"
 #include <fstream>
 #include <vector>
+#include <iostream>
+#include <string>
 #include <ctime>
 #include <conio.h>
 #include <algorithm>
@@ -195,18 +197,16 @@ std::string WordsOnDisk::load_string_from_array(const std::vector<char>& buffer,
 		return std::string("");
 	++(*indexToRead);
 
-	char buf[1024];
-	int index = 0;
+	std::string str;
+	str.reserve(100);
 
 	while (buffer[*indexToRead] != '"')
 	{
-		buf[index++] = buffer[*indexToRead];
+		str += buffer[*indexToRead];
 		++(*indexToRead);
 	}
 	++(*indexToRead);
-	buf[index++] = 0;
 
-	std::string str(buf);
 	return str;
 }
 
@@ -1390,6 +1390,13 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 
 int main(int argc, char* argv[])
 {
+	//std::string str = "123";
+	//char c = '4';
+	//str += c;
+	//std::cout << str << std::endl;
+	//return 0;
+
+
 	//char c = getch_filtered();
 	//int nRet = GetKeyState(VK_SHIFT);
 	//printf("%d %d\n", c, nRet);
