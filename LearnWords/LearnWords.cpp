@@ -707,7 +707,7 @@ bool CloseTranslationWordsManager::is_word_appended_to_translation_already(const
 {
 	WordsOnDisk::WordInfo& wSrc = wordsOnDisk._words[srcWordIndex];
 
-	if (strstr(wSrc.translation.c_str(), engWord.c_str()))
+	if (wSrc.translation.find(engWord) != std::string::npos)
 		return true;
 
 	return false;
@@ -783,31 +783,33 @@ void CloseTranslationWordsManager::add_close_eng_word_to_translation(int n)
 	if (n >= closeWordsFound.size())
 		return;
 	WordsOnDisk::WordInfo& w = wordsOnDisk._words[srcWordIndex];
+	const std::string& wr = w.translation;
 	// ЌайдЄм место, куда добавить похожее слово. Ёто место будет сразу после перевода, дл€ которого мы нашли другое англ. слово с близким переводом
 
-	const char* place = strstr(w.translation.c_str(), closeWordsFound[n].rusWordSrc.c_str());
-	if (place == nullptr)
+	size_t pos = wr.find(closeWordsFound[n].rusWordSrc);
+
+	if (pos == std::string::npos)
 	{
 		printf("Error 86036939");
 		exit(1);
 	}
 
-	while (*place != 0 && *place != ',' && *place != '(' && *place != ';')
-		++place;
+	while (wr[pos] != 0 && wr[pos] != ',' && wr[pos] != '(' && wr[pos] != ';')
+		++pos;
 
-	if (*place == '(')   // Ќужно добавить слово в список
+	if (wr[pos] == '(')   // Ќужно добавить слово в список
 	{
-		while (*place != 0 && *place != ')')
-			++place;
-		if (*place == 0)
+		while (wr[pos] != 0 && wr[pos] != ')')
+			++pos;
+		if (wr[pos] == 0)
 		{
 			printf("Sintax error 5725875");
 			exit(1);
 		}
-		w.translation.insert(place - w.translation.c_str(), ", " + closeWordsFound[n].engWord);
+		w.translation.insert(pos, ", " + closeWordsFound[n].engWord);
 	}
 	else                 // —писка ещЄ нет, создадим его
-		w.translation.insert(place - w.translation.c_str(), " (" + closeWordsFound[n].engWord + ")");
+		w.translation.insert(pos, " (" + closeWordsFound[n].engWord + ")");
 }
 
 
@@ -1390,12 +1392,11 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 
 int main(int argc, char* argv[])
 {
-	//std::string str = "123";
-	//char c = '4';
-	//str += c;
-	//std::cout << str << std::endl;
+	//std::string str1 = "123==asd";
+	//std::string str2 = "asdf";
+	//size_t pos = str1.find(str2);
+	//printf("%u %u\n", pos, std::string::npos);
 	//return 0;
-
 
 	//char c = getch_filtered();
 	//int nRet = GetKeyState(VK_SHIFT);
