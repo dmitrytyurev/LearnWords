@@ -1158,10 +1158,16 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 			{
 				if (++w.rightAnswersNum > MAX_RIGHT_REPEATS_GLOBAL_N)
 					w.rightAnswersNum = MAX_RIGHT_REPEATS_GLOBAL_N;
-				if (w.rightAnswersNum >= RAND_REPEATS_GLOBAL_N)
+
+				int totalToRandomRepeat = 0;
+				int middleQueued = 0;
+				calc_words_for_random_repeat(&totalToRandomRepeat, &middleQueued);
+
+				if (w.rightAnswersNum >= RAND_REPEATS_GLOBAL_N  &&  middleQueued < 20) // FIXME!!! ¬ынести константу
 					put_word_to_middle_or_end_of_random_repeat_queue(w);
 				else
 					put_word_to_end_of_random_repeat_queue(w);  // “акие слова и так часто повтор€ютс€ в check_by_time, поэтому нечего им делать в рандомной проверке. 
+				                                                // Ћибо в очереди уже слишком много внеочередных слов, поэтому, слова, которые помних хорошо, не будем добавл€ть вне очереди
 				wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, false);
 				break;
 			}
@@ -1280,7 +1286,7 @@ void put_word_to_middle_or_end_of_random_repeat_queue(WordsOnDisk::WordInfo& w)
 		--maxIndex;
 	}
 
-	int desiredIndex = 50;      // ” этого слова хотим вз€ть индекс рандомной проверки
+	int desiredIndex = 50;       // FIXME!!! ¬ынести константу    // ” этого слова хотим вз€ть индекс рандомной проверки 
 	if (desiredIndex <= maxIndex)
 		desiredIndex = maxIndex + 1;
 
