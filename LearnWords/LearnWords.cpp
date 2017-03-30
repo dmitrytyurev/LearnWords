@@ -129,7 +129,7 @@ WordsOnDisk wordsOnDisk;
 time_t curTime = 0;
 std::vector<int> forgottenWordsIndices; // Индексы слов, которые были забыты при последней проверке слов
 
-void put_word_to_middle_or_end_of_random_repeat_queue(WordsOnDisk::WordInfo& w, bool toEndIfSmallQueue);
+void put_word_to_middle_or_end_of_random_repeat_queue(WordsOnDisk::WordInfo& w);
 void calc_words_for_random_repeat(int* totalToRandomRepeat, int* middleQueued);
 void log_random_test_wors();
 int get_word_to_repeat();
@@ -1159,7 +1159,7 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 				if (++w.rightAnswersNum > MAX_RIGHT_REPEATS_GLOBAL_N)
 					w.rightAnswersNum = MAX_RIGHT_REPEATS_GLOBAL_N;
 				if (w.rightAnswersNum >= RAND_REPEATS_GLOBAL_N)
-					put_word_to_middle_or_end_of_random_repeat_queue(w, false);
+					put_word_to_middle_or_end_of_random_repeat_queue(w);
 				else
 					put_word_to_end_of_random_repeat_queue(w);  // Такие слова и так часто повторяются в check_by_time, поэтому нечего им делать в рандомной проверке. 
 				wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, false);
@@ -1178,7 +1178,7 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 					{
 						forgottenWordsIndices.push_back(wordsToRepeat[i]);
 						w.rightAnswersNum = std::min(w.rightAnswersNum, RIGHT_ANSWERS_FALLBACK);
-						put_word_to_middle_or_end_of_random_repeat_queue(w, false);
+						put_word_to_middle_or_end_of_random_repeat_queue(w);
 						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, true);
 						break;
 					}
@@ -1264,7 +1264,7 @@ void put_word_to_end_of_random_repeat_queue(WordsOnDisk::WordInfo& w)
 	w.randomTestIncID = calc_max_randomTestIncID() + 1;
 }
 
-void put_word_to_middle_or_end_of_random_repeat_queue(WordsOnDisk::WordInfo& w, bool toEndIfSmallQueue)
+void put_word_to_middle_or_end_of_random_repeat_queue(WordsOnDisk::WordInfo& w)
 {
 	std::vector<int> indicesOfWords;   // Индексы подходящих для проверки слов
 
@@ -1273,25 +1273,21 @@ void put_word_to_middle_or_end_of_random_repeat_queue(WordsOnDisk::WordInfo& w, 
 	if (indicesOfWords.size() == 0)
 		return;
 
-	if (toEndIfSmallQueue  &&  indicesOfWords.size() < 50)   // Если очередь слов на рандомный повтор небольшая, то вставляем в конец, ибо вставка в середину может зациклить повторение одних и тех же слов
-	{
-		put_word_to_end_of_random_repeat_queue(w);
-		return;
-	}
-
-	int desiredIndex = static_cast<int>(indicesOfWords.size() * 0.2f);  // У этого слова хотим взять индекс рандомной проверки
-
-	// Но сначала проверим, нет ли слов с бОльшим randomTestIncID, которые тоже вставлялись не в конец, а в середину (если есть, мы должны стать через одно слово после них, не раньше)
-
+	// Найдём индекс последнего слова, которое добавлялось в середину списка  (либо -1, если такого нет)
 	int maxIndex = indicesOfWords.size() - 1;
 	while (maxIndex >= 0 && wordsOnDisk._words[indicesOfWords[maxIndex]].hasWordAddedNotAtEnd() == false)
 	{
 		--maxIndex;
 	}
 
-	if (maxIndex != -1 && maxIndex + 1 >= desiredIndex)  // Такое слово нашлось, придётся сдвинуть desiredIndex 
+	int desiredIndex = 50;      // У этого слова хотим взять индекс рандомной проверки
+	if (desiredIndex <= maxIndex)
+		desiredIndex = maxIndex + 1;
+
+	if (desiredIndex >= indicesOfWords.size())
 	{
-		desiredIndex = std::min(maxIndex + 1, static_cast<int>(indicesOfWords.size()) - 1);  // Пропустим одно слово из тех, что было вставлено не в середину (чтобы такие слова тоже попадали на проверку через одно и не подвисали)
+		put_word_to_end_of_random_repeat_queue(w);
+		return;
 	}
 
 	int desiredIdWithoutFlag = wordsOnDisk._words[indicesOfWords[desiredIndex]].getRandomTestIncIdWithoutFlag();
@@ -1359,7 +1355,7 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 					if (c == 77) // Стрелка вправо (помним слово не очень уверенно)
 					{
 						forgottenWordsIndices.push_back(wordToRepeatIndex);
-						put_word_to_middle_or_end_of_random_repeat_queue(w, true);  // true - чтобы при маленькой очереди слов на рандомный повтор не зацикливались по малому кругу смутные слова
+						put_word_to_middle_or_end_of_random_repeat_queue(w);
 						wordsOnDisk.save_to_file();
 						break;
 					}
