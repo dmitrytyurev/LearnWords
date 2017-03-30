@@ -129,7 +129,7 @@ WordsOnDisk wordsOnDisk;
 time_t curTime = 0;
 std::vector<int> forgottenWordsIndices; // Индексы слов, которые были забыты при последней проверке слов
 
-void put_word_to_middle_or_end_of_random_repeat_queue(WordsOnDisk::WordInfo& w, bool isOnlyLoweringID, bool toEndIfSmallQueue);
+void put_word_to_middle_or_end_of_random_repeat_queue(WordsOnDisk::WordInfo& w, bool toEndIfSmallQueue);
 void calc_words_for_random_repeat(int* totalToRandomRepeat, int* middleQueued);
 void log_random_test_wors();
 int get_word_to_repeat();
@@ -1159,7 +1159,7 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 				if (++w.rightAnswersNum > MAX_RIGHT_REPEATS_GLOBAL_N)
 					w.rightAnswersNum = MAX_RIGHT_REPEATS_GLOBAL_N;
 				if (w.rightAnswersNum >= RAND_REPEATS_GLOBAL_N)
-					put_word_to_middle_or_end_of_random_repeat_queue(w, false, false);
+					put_word_to_middle_or_end_of_random_repeat_queue(w, false);
 				else
 					put_word_to_end_of_random_repeat_queue(w);  // Такие слова и так часто повторяются в check_by_time, поэтому нечего им делать в рандомной проверке. 
 				wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, false);
@@ -1178,7 +1178,7 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 					{
 						forgottenWordsIndices.push_back(wordsToRepeat[i]);
 						w.rightAnswersNum = std::min(w.rightAnswersNum, RIGHT_ANSWERS_FALLBACK);
-						put_word_to_middle_or_end_of_random_repeat_queue(w, false, false);
+						put_word_to_middle_or_end_of_random_repeat_queue(w, false);
 						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, true);
 						break;
 					}
@@ -1264,7 +1264,7 @@ void put_word_to_end_of_random_repeat_queue(WordsOnDisk::WordInfo& w)
 	w.randomTestIncID = calc_max_randomTestIncID() + 1;
 }
 
-void put_word_to_middle_or_end_of_random_repeat_queue(WordsOnDisk::WordInfo& w, bool onlyLoweringID, bool toEndIfSmallQueue)
+void put_word_to_middle_or_end_of_random_repeat_queue(WordsOnDisk::WordInfo& w, bool toEndIfSmallQueue)
 {
 	std::vector<int> indicesOfWords;   // Индексы подходящих для проверки слов
 
@@ -1296,8 +1296,7 @@ void put_word_to_middle_or_end_of_random_repeat_queue(WordsOnDisk::WordInfo& w, 
 
 	int desiredIdWithoutFlag = wordsOnDisk._words[indicesOfWords[desiredIndex]].getRandomTestIncIdWithoutFlag();
 
-	if (!onlyLoweringID  ||  desiredIdWithoutFlag < w.getRandomTestIncIdWithoutFlag())  // Обновляем только, если это сдвинет слово в очереди ближе к проверке
-		w.randomTestIncID = WordsOnDisk::WordInfo::RANDOM_REPEAT_FLAG + desiredIdWithoutFlag;
+	w.randomTestIncID = WordsOnDisk::WordInfo::RANDOM_REPEAT_FLAG + desiredIdWithoutFlag;
 }
 
 
@@ -1360,7 +1359,7 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 					if (c == 77) // Стрелка вправо (помним слово не очень уверенно)
 					{
 						forgottenWordsIndices.push_back(wordToRepeatIndex);
-						put_word_to_middle_or_end_of_random_repeat_queue(w, false, true);  // true - чтобы при маленькой очереди слов на рандомный повтор не зацикливались по малому кругу смутные слова
+						put_word_to_middle_or_end_of_random_repeat_queue(w, true);  // true - чтобы при маленькой очереди слов на рандомный повтор не зацикливались по малому кругу смутные слова
 						wordsOnDisk.save_to_file();
 						break;
 					}
