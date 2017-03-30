@@ -347,30 +347,30 @@ void WordsOnDisk::save_to_file()
 		exit(1);
 	}
 
-	for (int i = 0; i < _compareExcludePairs.size(); ++i)
+	for (const auto& e:_compareExcludePairs)
 	{
 		fprintf(f, "\"%s\" \"%s\"\n",
-			_compareExcludePairs[i].word1.c_str(),
-			_compareExcludePairs[i].word2.c_str());
+			e.word1.c_str(),
+			e.word2.c_str());
 	}
 
 	fprintf(f, "\"Main block\"\n");
 
-	for (int i = 0; i < _words.size(); ++i)
+	for (const auto& e:_words)
 	{
-		if (_words[i].rightAnswersNum == 0  && 
-			_words[i].dateOfRepeat == 0 && 
-			_words[i].randomTestIncID == 0 &&
-			_words[i].cantRandomTestedAfter == 0)
-			fprintf(f, "\"%s\" \"%s\"\n", _words[i].word.c_str(), _words[i].translation.c_str());
+		if (e.rightAnswersNum == 0  && 
+			e.dateOfRepeat == 0 && 
+			e.randomTestIncID == 0 &&
+			e.cantRandomTestedAfter == 0)
+			fprintf(f, "\"%s\" \"%s\"\n", e.word.c_str(), e.translation.c_str());
 		else
 			fprintf(f, "\"%s\" \"%s\" %d %d %d %d\n", 
-				_words[i].word.c_str(),
-				_words[i].translation.c_str(),
-				_words[i].rightAnswersNum,
-				_words[i].dateOfRepeat,
-				_words[i].randomTestIncID,
-				_words[i].cantRandomTestedAfter);
+				e.word.c_str(),
+				e.translation.c_str(),
+				e.rightAnswersNum,
+				e.dateOfRepeat,
+				e.randomTestIncID,
+				e.cantRandomTestedAfter);
 	}
 	fclose(f);
 }
@@ -417,10 +417,8 @@ void recalc_stats(time_t curTime, int* wordsTimeToRepeatNum, int* wordsJustLearn
 	for (int i = 0; i < MAX_RIGHT_REPEATS_GLOBAL_N + 1; ++i)
 		wordsByLevel[i] = 0;
 
-	for (int i = 0; i < wordsOnDisk._words.size(); ++i)
+	for (const auto& w:wordsOnDisk._words)
 	{
-		const WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
-
 		++(wordsByLevel[w.rightAnswersNum]);
 
 		if (w.dateOfRepeat != 0)
@@ -473,9 +471,9 @@ log_random_test_wors();
 	printf("4. Check words by time [%d]\n", wordsTimeToRepeatNum);
 	printf("\n\n");
 
-	for (int i = 0; i < forgottenWordsIndices.size(); ++i)
+	for (const auto& index:forgottenWordsIndices)
 	{
-		WordsOnDisk::WordInfo& w = wordsOnDisk._words[forgottenWordsIndices[i]];
+		WordsOnDisk::WordInfo& w = wordsOnDisk._words[index];
 		printf("==============================================\n%s\n   %s\n", w.word.c_str(), w.translation.c_str());
 	}
 
@@ -538,21 +536,6 @@ void put_to_queue(std::vector<WordToLearn>& queue, const WordToLearn& wordToPut,
 
 	queue.insert(queue.begin() + pos, wordToPut);
 }
-
-void print_queue_state(const std::vector<WordToLearn>& queue)
-{
-return;
-	printf("=== Queue ===\n");
-	log("=== Queue ===\n");
-	for (int i = queue.size()-1; i >= 0; --i)
-	{
-		printf("%s rightAnswersNum=%d counter=%d\n", wordsOnDisk._words[queue[i]._index].word.c_str(), queue[i]._localRightAnswersNum, queue[i]._counterShown);
-		log("%s rightAnswersNum=%d counter=%d\n", wordsOnDisk._words[queue[i]._index].word.c_str(), queue[i]._localRightAnswersNum, queue[i]._counterShown);
-	}
-	printf("\n");
-	log("\n");
-}
-
 
 void wait_time(int waitTimeSec)
 {
@@ -692,10 +675,8 @@ void CloseTranslationWordsManager::get_separate_words_from_translation(const cha
 
 bool CloseTranslationWordsManager::is_word_in_filter_already(const std::string& word1, const std::string& word2)
 {
-	for (int i = 0; i < wordsOnDisk._compareExcludePairs.size(); ++i)
+	for (const auto& cep:wordsOnDisk._compareExcludePairs)
 	{
-		WordsOnDisk::CompareExcludePair& cep = wordsOnDisk._compareExcludePairs[i];
-	
 		if (cep.word1 == word2  &&  cep.word2 == word1)
 			return true;
 	}
@@ -735,9 +716,9 @@ void CloseTranslationWordsManager::collect_close_words_to(std::vector<CloseWordF
 		std::vector<std::string> words;
 		get_separate_words_from_translation(w.translation.c_str(), words);
 
-		for (int i2 = 0; i2 < words.size(); ++i2)
+		for (const auto& word:words)
 		{
-			if (words[i2].compare(0, cutLen, rusWord, 0, cutLen) == 0)
+			if (word.compare(0, cutLen, rusWord, 0, cutLen) == 0)
 			{
 				CloseWordFound cwf;
 				cwf.engWord     = w.word;
@@ -945,8 +926,6 @@ void learning_words()
 	while (true)
 	{
 		clear_screen();
-		print_queue_state(unlearned);
-		print_queue_state(learned);
 
 		// ¬ыбрать слово, которое будем показывать
 		WordToLearn wordToLearn;
@@ -1392,15 +1371,16 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 
 int main(int argc, char* argv[])
 {
-	//std::string str1 = "123==asd";
-	//std::string str2 = "asdf";
-	//size_t pos = str1.find(str2);
-	//printf("%u %u\n", pos, std::string::npos);
-	//return 0;
 
-	//char c = getch_filtered();
-	//int nRet = GetKeyState(VK_SHIFT);
-	//printf("%d %d\n", c, nRet);
+	//std::vector<std::string> testvect;
+	//testvect.push_back(std::string("test1"));
+	//testvect.push_back(std::string("test2"));
+	//testvect.push_back(std::string("test3"));
+	//for (auto s:testvect)
+	//{
+	//	printf("%s\n", s.c_str());
+
+	//}
 	//return 0;
 
 	std::srand(unsigned(std::time(0)));
