@@ -449,26 +449,27 @@ log_random_test_wors();
 	int wordsByLevel[MAX_RIGHT_REPEATS_GLOBAL_N + 1];
 	recalc_stats(curTime, &wordsTimeToRepeatNum, &wordsJustLearnedAndForgottenNum, wordsByLevel);
 
-	int wordsLearnedGood = 0;
+	int wordsLearnedTotal = 0;
+	int wordsLearnedGood  = 0;
 	for (int i = 1; i < MAX_RIGHT_REPEATS_GLOBAL_N + 1; ++i)
 	{
-		printf("%d ", wordsByLevel[i]);
+		wordsLearnedTotal += wordsByLevel[i];
 		if (i >= 8)
 			wordsLearnedGood += wordsByLevel[i];
 	}
-	printf("  Learned good: %d ", wordsLearnedGood);
+	printf("Выучено слов: %d, из них выучено хорошо : %d ", wordsLearnedTotal, wordsLearnedGood);
 
 	int totalToRandomRepeat = 0;
 	int middleQueued = 0;
 	calc_words_for_random_repeat(&totalToRandomRepeat, &middleQueued);
-	printf("  rToRR: %d, aNAE: %d ", totalToRandomRepeat, middleQueued);
+	printf("  внеочередные для рандомного повтора: %d ", middleQueued);
 
 	printf("\n");
 	printf("\n");
-	printf("1. Learn words\n");
-	printf("2. Repeat words just learned or forgotten [%d]\n", wordsJustLearnedAndForgottenNum);
-	printf("3. Repeat random words [select]\n");
-	printf("4. Check words by time [%d]\n", wordsTimeToRepeatNum);
+	printf("1. Выучить слова\n");
+	printf("2. Повторить только что выученное или забытое [%d]\n", wordsJustLearnedAndForgottenNum);
+	printf("3. Повторить случайные слова [N]\n");
+	printf("4. Проверить слова, для которых наступило время  [%d]\n", wordsTimeToRepeatNum);
 	printf("\n\n");
 
 	for (const auto& index:forgottenWordsIndices)
@@ -1132,7 +1133,7 @@ void checking_words_by_time()
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[wordsToRepeat[i]];
 
 		clear_screen();
-		printf("%d\n\n%s\n", wordsToRepeat.size()-i, w.word.c_str());
+		printf("Осталось: %d\n\n%s\n", wordsToRepeat.size()-i, w.word.c_str());
 log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk._fullFileName.c_str(), get_time_in_text(curTime));
 		char c = 0;
 		do
@@ -1321,7 +1322,7 @@ void repeating_random_words()
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[wordToRepeatIndex];
 
 		clear_screen();
-		printf("%d\n\n%s\n", wordsToRepeatNum-i, w.word.c_str());
+		printf("Осталось: %d\n\n%s\n", wordsToRepeatNum-i, w.word.c_str());
 log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._fullFileName.c_str(), get_time_in_text(curTime));
 		char c = 0;
 		do
