@@ -397,6 +397,16 @@ void WordsOnDisk::fill_date_of_repeate_and_save(WordsOnDisk::WordInfo& w, time_t
 	save_to_file();
 }
 
+
+void print_buttons_hints(const std::string& str, bool needRightKeyHint)
+{
+	printf("\n%s\n\n\n  Стрелка вверх  - помню хорошо!\n  Стрелка вниз   - забыл/перепутал хотя бы одно значение\n", str.c_str());
+	if (needRightKeyHint)
+		printf("  Стрелка вправо - вспомнил все значения, но с трудом\n");
+}
+
+
+
 void clear_screen(char fill = ' ') 
 {
 	COORD tl = { 0,0 };
@@ -831,7 +841,7 @@ void learning_words()
 	// Составим список индексов слов, которые будем учить
 
 	clear_screen();
-	printf("\nPlease, enter the number of words to learn: ");
+	printf("\nСколько слов хотите выучить: ");
 	int additionalWordsToLearn = enter_number_from_console();
 
 	if (additionalWordsToLearn > 0)
@@ -969,7 +979,7 @@ void learning_words()
 			if (c == 27)
 				return;
 		} while (c != ' ');
-		printf("\n%s\n\n\n  Arrow up   - yes! :)\n  Arrow down - no :(\n", w.translation.c_str());
+		print_buttons_hints(w.translation, false);
 
 		// Обрабатываем ответ - знает ли пользователь слово
 		while (true)
@@ -1068,7 +1078,7 @@ void repeating_words_just_learnded_and_forgotten()
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[wordsToRepeat[i]];
 
 		clear_screen();
-		printf("\n%s\n", w.word.c_str());
+		printf("Осталось: %d\n\n%s\n", wordsToRepeat.size()-i, w.word.c_str());
 		char c = 0;
 		do
 		{
@@ -1080,8 +1090,8 @@ void repeating_words_just_learnded_and_forgotten()
 		while (true)
 		{
 			clear_screen();
-			printf("\n%s\n", w.word.c_str());
-			printf("\n%s\n\n\n  Arrow up   - yes! :)\n  Arrow down - no :(\n", w.translation.c_str());
+			printf("Осталось: %d\n\n%s\n", wordsToRepeat.size() - i, w.word.c_str());
+			print_buttons_hints(w.translation, false);
 			CloseTranslationWordsManager ctwm(wordsToRepeat[i]);
 			ctwm.print_close_words_by_translation();
 
@@ -1146,8 +1156,8 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 		while (true)
 		{
 			clear_screen();
-			printf("%d\n\n%s\n", wordsToRepeat.size() - i, w.word.c_str());
-			printf("\n%s\n\n\n  Arrow up   - yes! :)\n  Arrow down - no :(\n  Arrow right - yes, but difficult :(\n", w.translation.c_str());
+			printf("Осталось: %d\n\n%s\n", wordsToRepeat.size() - i, w.word.c_str());
+			print_buttons_hints(w.translation, true);
 			CloseTranslationWordsManager ctwm(wordsToRepeat[i]);
 			ctwm.print_close_words_by_translation();
 
@@ -1307,7 +1317,7 @@ void repeating_random_words()
 {
 	forgottenWordsIndices.clear();
 	clear_screen();
-	printf("\nPlease, enter the number of RANDOM words to repeat: ");
+	printf("\nСколько случайных слов хотите повторить: ");
 	int wordsToRepeatNum = enter_number_from_console();
 	if (wordsToRepeatNum == 0)
 		return;
@@ -1335,8 +1345,8 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 		while (true)
 		{
 			clear_screen();
-			printf("%d\n\n%s\n", wordsToRepeatNum - i, w.word.c_str());
-			printf("\n%s\n\n\n  Arrow up   - yes! :)\n  Arrow down - no :(\n  Arrow right - yes, but difficult :(\n", w.translation.c_str());
+			printf("Осталось: %d\n\n%s\n", wordsToRepeatNum - i, w.word.c_str());
+			print_buttons_hints(w.translation, true);
 			CloseTranslationWordsManager ctwm(wordToRepeatIndex);
 			ctwm.print_close_words_by_translation();
 
