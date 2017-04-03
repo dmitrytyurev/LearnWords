@@ -93,6 +93,7 @@ struct WordsOnDisk
 		                           // как у одно из слов примерно в середине списка. Но если позже есть слова, которые тоже вставлялись вне очереди, то от последнего такого слова
 		                           // пропускаем одно слово и берём следующее и используем его randomTestIncID (чередуем вставленные слова через 1 со старыми, чтобы они не подвисали)
 								   // Если данное слово было вставлено не в конец, то к нему прибавляется RANDOM_REPEAT_FLAG в качестве признака
+		std::string closeWords;    // Английские слова через ';', которые нужно показать вместе с этим словом (например, похожие по написанию, которые мы спутали с данным словом)
 	};
 
 	struct CompareExcludePair
@@ -290,7 +291,7 @@ void WordsOnDisk::load_from_file(const char* fullFileName)
 		while (buffer[parseIndex] != 0  &&  buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
 			++parseIndex;
 
-		if (is_digit(buffer[parseIndex]))  // Читаем числовые параметры
+		if (is_digit(buffer[parseIndex]))  // Читаем параметры
 		{
 			wi.rightAnswersNum = load_int_from_array(buffer, &parseIndex);
 			while (buffer[parseIndex] != 0  &&  buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
@@ -321,8 +322,14 @@ void WordsOnDisk::load_from_file(const char* fullFileName)
 
 			// ---------
 			wi.cantRandomTestedAfter = load_int_from_array(buffer, &parseIndex);
-			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd)
+			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && buffer[parseIndex] != '"')
 				++parseIndex;
+			if (buffer[parseIndex] == '"')
+			{
+				wi.closeWords = load_string_from_array(buffer, &parseIndex);
+				while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd)
+					++parseIndex;
+			}
 		}
 
 		// Занести WordInfo в вектор
@@ -361,16 +368,24 @@ void WordsOnDisk::save_to_file()
 		if (e.rightAnswersNum == 0  && 
 			e.dateOfRepeat == 0 && 
 			e.randomTestIncID == 0 &&
-			e.cantRandomTestedAfter == 0)
+			e.cantRandomTestedAfter == 0 &&
+			e.closeWords.length() == 0)
 			fprintf(f, "\"%s\" \"%s\"\n", e.word.c_str(), e.translation.c_str());
 		else
-			fprintf(f, "\"%s\" \"%s\" %d %d %d %d\n", 
+		{
+			fprintf(f, "\"%s\" \"%s\" %d %d %d %d", 
 				e.word.c_str(),
 				e.translation.c_str(),
 				e.rightAnswersNum,
 				e.dateOfRepeat,
 				e.randomTestIncID,
 				e.cantRandomTestedAfter);
+
+			if (e.closeWords.length())
+				fprintf(f, " \"%s\"", e.closeWords.c_str());
+
+			fprintf(f, "\n");
+		}
 	}
 	fclose(f);
 }
@@ -405,7 +420,14 @@ void print_buttons_hints(const std::string& str, bool needRightKeyHint)
 		printf("  Стрелка вправо - вспомнил все значения, но с трудом\n");
 }
 
+void print_close_words_user_selected(int wordIndex)
+{
+	const std::string& closeWord = wordsOnDisk._words[wordIndex].closeWords;
 
+	for (const auto& curWord : wordsOnDisk._words)
+		if (curWord.word == closeWord)
+			printf("%s %s\n", curWord.word.c_str(), curWord.translation.c_str());
+}
 
 void clear_screen(char fill = ' ') 
 {
@@ -1350,7 +1372,8 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 			printf("\n  Осталось: %d\n", wordsToRepeatNum - i - 1);
 			CloseTranslationWordsManager ctwm(wordToRepeatIndex);
 			ctwm.print_close_words_by_translation();
-
+			print_close_words_user_selected(wordToRepeatIndex);
+			
 			c = getch_filtered();
 			ctwm.process_user_input(c);
 			if (c == 27)
