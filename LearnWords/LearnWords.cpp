@@ -630,7 +630,7 @@ private:
 	void get_separate_words_from_translation(const char* __str, std::vector<std::string>& outWords);
 	bool is_word_in_filter_already(const std::string& word1, const std::string& word2);
 	bool is_word_appended_to_translation_already(const std::string& engWord);
-	void collect_close_words_to(std::vector<CloseWordFound>& closeWordsFound, std::string& rusWord, int srcWordIndex, const std::string& engWord);
+	void collect_close_words_to(std::vector<CloseWordFound>& closeWordsFound, const std::string& rusWord, int srcWordIndex, const std::string& engWord);
 
 private:
 	int srcWordIndex;
@@ -705,7 +705,7 @@ bool CloseTranslationWordsManager::is_word_appended_to_translation_already(const
 	return false;
 }
 
-void CloseTranslationWordsManager::collect_close_words_to(std::vector<CloseWordFound>& closeWordsFound, std::string& rusWord, int srcWordIndex, const std::string& engWord)
+void CloseTranslationWordsManager::collect_close_words_to(std::vector<CloseWordFound>& closeWordsFound, const std::string& rusWord, int srcWordIndex, const std::string& engWord)
 {
 	int length = rusWord.length();
 	if (length < MIN_CLOSE_WORD_LEN)
@@ -751,8 +751,8 @@ void CloseTranslationWordsManager::print_close_words_by_translation()
 	std::vector<std::string> words;
 	get_separate_words_from_translation(w.translation.c_str(), words);
 
-	for (int i=0; i<words.size(); ++i)
-		collect_close_words_to(closeWordsFound, words[i], srcWordIndex, w.word);
+	for (const auto& word: words)
+		collect_close_words_to(closeWordsFound, word, srcWordIndex, w.word);
 
 	for (int i = 0; i<closeWordsFound.size(); ++i)
 		printf("%d. %s: %s\n", i+1, closeWordsFound[i].engWord.c_str(), closeWordsFound[i].translation.c_str());
@@ -865,9 +865,9 @@ void learning_words()
 
 	for (int i2 = 0; i2 < TIMES_TO_REPEAT_TO_LEARN; ++i2)
 	{
-		for (int i = 0; i < wordsToLearnIndices.size(); ++i)
+		for (const auto& index: wordsToLearnIndices)
 		{
-			const WordsOnDisk::WordInfo& w = wordsOnDisk._words[wordsToLearnIndices[i]];
+			const WordsOnDisk::WordInfo& w = wordsOnDisk._words[index];
 			char c = 0;
 
 			if (i2 != 0)
@@ -924,11 +924,11 @@ void learning_words()
 	std::vector<WordToLearn> learned;    // Очередь выученных слов (добавляем в конец, берём из начала)
 
 	// Занести слова, которые будем изучать в очередь невыученных слов
-	for (int i = 0; i < wordsToLearnIndices.size(); ++i)
+	for (const auto& index: wordsToLearnIndices)
 	{
-		const WordsOnDisk::WordInfo& w = wordsOnDisk._words[wordsToLearnIndices[i]];
+		const WordsOnDisk::WordInfo& w = wordsOnDisk._words[index];
 		WordToLearn word;
-		word._index = wordsToLearnIndices[i];
+		word._index = index;
 		unlearned.push_back(word);
 	}
 
@@ -1222,10 +1222,8 @@ void calc_words_for_random_repeat(int* totalToRandomRepeat, int* middleQueued)
 	*totalToRandomRepeat = 0;
 	*middleQueued = 0;
 
-	for (int i = 0; i < wordsOnDisk._words.size(); ++i)
+	for (const auto& w: wordsOnDisk._words)
 	{
-		WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
-
 		if (w.canRandomTested(curTime))
 		{
 			++(*totalToRandomRepeat);
@@ -1259,9 +1257,9 @@ void log_random_test_wors()
 	std::vector<int> indicesOfWords;   // Индексы подходящих для проверки слов
 	fill_indices_of_random_repeat_words(indicesOfWords); // Заполним indicesOfWords
 	log("=== Words to random repeat = %d\n", indicesOfWords.size());
-	for (int i = 0; i < indicesOfWords.size(); ++i)
+	for (const auto& index: indicesOfWords)
 	{
-		WordsOnDisk::WordInfo& w = wordsOnDisk._words[indicesOfWords[i]];
+		WordsOnDisk::WordInfo& w = wordsOnDisk._words[index];
 		log("  %s %d\n", w.word.c_str(), w.randomTestIncID);
 	}
 }
