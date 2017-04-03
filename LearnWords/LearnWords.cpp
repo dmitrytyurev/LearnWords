@@ -1078,7 +1078,7 @@ void repeating_words_just_learnded_and_forgotten()
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[wordsToRepeat[i]];
 
 		clear_screen();
-		printf("Осталось: %d\n\n%s\n", wordsToRepeat.size()-i, w.word.c_str());
+		printf("\n\n%s\n", w.word.c_str());
 		char c = 0;
 		do
 		{
@@ -1090,8 +1090,9 @@ void repeating_words_just_learnded_and_forgotten()
 		while (true)
 		{
 			clear_screen();
-			printf("Осталось: %d\n\n%s\n", wordsToRepeat.size() - i, w.word.c_str());
+			printf("\n\n%s\n", w.word.c_str());
 			print_buttons_hints(w.translation, false);
+			printf("\n  Осталось: %d\n", wordsToRepeat.size() - i - 1);
 			CloseTranslationWordsManager ctwm(wordsToRepeat[i]);
 			ctwm.print_close_words_by_translation();
 
@@ -1143,7 +1144,7 @@ void checking_words_by_time()
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[wordsToRepeat[i]];
 
 		clear_screen();
-		printf("Осталось: %d\n\n%s\n", wordsToRepeat.size()-i, w.word.c_str());
+		printf("\n\n%s\n", w.word.c_str());
 log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk._fullFileName.c_str(), get_time_in_text(curTime));
 		char c = 0;
 		do
@@ -1156,8 +1157,9 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 		while (true)
 		{
 			clear_screen();
-			printf("Осталось: %d\n\n%s\n", wordsToRepeat.size() - i, w.word.c_str());
+			printf("\n\n%s\n", w.word.c_str());
 			print_buttons_hints(w.translation, true);
+			printf("\n  Осталось: %d\n", wordsToRepeat.size() - i - 1);
 			CloseTranslationWordsManager ctwm(wordsToRepeat[i]);
 			ctwm.print_close_words_by_translation();
 
@@ -1332,7 +1334,7 @@ void repeating_random_words()
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[wordToRepeatIndex];
 
 		clear_screen();
-		printf("Осталось: %d\n\n%s\n", wordsToRepeatNum-i, w.word.c_str());
+		printf("\n\n%s\n", w.word.c_str());
 log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._fullFileName.c_str(), get_time_in_text(curTime));
 		char c = 0;
 		do
@@ -1345,8 +1347,9 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 		while (true)
 		{
 			clear_screen();
-			printf("Осталось: %d\n\n%s\n", wordsToRepeatNum - i, w.word.c_str());
+			printf("\n\n%s\n", w.word.c_str());
 			print_buttons_hints(w.translation, true);
+			printf("\n  Осталось: %d\n", wordsToRepeatNum - i - 1);
 			CloseTranslationWordsManager ctwm(wordToRepeatIndex);
 			ctwm.print_close_words_by_translation();
 
