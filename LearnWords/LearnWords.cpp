@@ -18,8 +18,6 @@ const static int MAX_RIGHT_REPEATS_GLOBAL_N = 13;
 // !!! ≈сли врем€ сутки или больше, то вычитаетс€ 0.1f 
 float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1]          = { 0, 0.25f, 1,     1, 1, 3, 6,  8, 15, 25, 90,  90 , 90 , 120 }; // если пользователь привык работать в одно и то же врем€ суток
 float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1]          = { 0, 0.25f, 1,     1, 1, 4, 7, 12, 20, 30, 100, 100, 100, 140 }; // ему так будет удобнее, иначе каждый день будет сдвиг вперЄд
-float addDaysMinHardWords[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 1, 1, 1, 1, 4,  6,  8,  15,  25,  40,  80 };  
-float addDaysMaxHardWords[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 1, 1, 1, 1, 5,  7,  12, 20,  30,  50,  100 };
 
 const int SECONDS_IN_DAY = 3600 * 24;
 const int TIMES_TO_REPEAT_TO_LEARN = 4;  // —колько раз при изучении показать все слова сразу с переводом, прежде чем начать показывать без перевода
@@ -30,7 +28,7 @@ const int PERCENT_FOR_NEAR_WORDS = 30;           //  акой процент слов (от введЄ
 const int ADDITIONAL_REPEAT_THRESHOLD_DAYS = 3;  // √раница в дн€х между словами, знание которых провер€лось недавно и давно
 												 // »спользуетс€ при рандомном выборе слов дл€ проверки, врем€ проверки которых ещЄ не настало,
 												 // но проверка была запрошена пользователем
-const int RIGHT_ANSWERS_FALLBACK = 7;            // Ќомер шага, на который откатываетс€ слово при check_by_time, если помним неуверенно
+const int RIGHT_ANSWERS_FALLBACK = 6;            // Ќомер шага, на который откатываетс€ слово при check_by_time, если помним неуверенно
 const int RAND_REPEATS_GLOBAL_N = 8;             // ≈сли rightAnswersNum >= этому значению, то при check_by_time при верном ответе слово помещаетс€ в середину очереди рандомной проверки
 const int MIN_CLOSE_WORD_LEN = 5;                // —только первых символов берЄтс€ из слов перевода, чтобы искать слова с похожими переводами
 const float PERCENT_FORGOT_INSERT_QUEUE = 0.3f;  // ѕроцент от длины очереди неизученных слов куда вставим забытое слово
@@ -104,7 +102,7 @@ struct WordsOnDisk
 
 	void load_from_file(const char* fullFileName);
 	void save_to_file();
-	void fill_date_of_repeate_and_save(WordInfo& w, time_t currentTime, bool isHardLearned);
+	void fill_date_of_repeate_and_save(WordInfo& w, time_t currentTime);
 
 	std::string load_string_from_array(const std::vector<char>& buffer, int* indexToRead);
 	int load_int_from_array(const std::vector<char>& buffer, int* indexToRead);
@@ -390,15 +388,10 @@ void WordsOnDisk::save_to_file()
 	fclose(f);
 }
 
-void WordsOnDisk::fill_date_of_repeate_and_save(WordsOnDisk::WordInfo& w, time_t currentTime, bool isHardLearned)
+void WordsOnDisk::fill_date_of_repeate_and_save(WordsOnDisk::WordInfo& w, time_t currentTime)
 {
 	float min = addDaysMin[w.rightAnswersNum];
 	float max = addDaysMax[w.rightAnswersNum];
-	if (isHardLearned)  // ≈сли слово при изучении трудно запоминалось, то используем более плотный график повторений
-	{ 
-		min = addDaysMinHardWords[w.rightAnswersNum];
-		max = addDaysMaxHardWords[w.rightAnswersNum];
-	}
 	if (min > 0.99f)  min -= 0.1f;  // ≈сли пользователь привык заниматьс€ в одно и то же врем€ каждый день, то нельз€ выдавать слова ровно через кратные сутки
 	if (max > 0.99f)  max -= 0.1f;  // надо выдавать их чуть раньше.
 
@@ -1018,7 +1011,7 @@ void learning_words()
 					{
 						put_to_queue(learned, wordToLearn, 1);
 						w.rightAnswersNum = 1;
-						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, false);
+						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
 						if (unlearned.size() == 0)
 							return;
 					}
@@ -1058,7 +1051,7 @@ void learning_words()
 					case FromWhatSource::FROM_RANDOM_REPEAT_LIST:
 						forgottenWordsIndices.push_back(wordToRepeatIndex);
 						set_word_as_just_hardly_learned(w);
-						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, true);
+						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
 						break;
 					}
 					break;
@@ -1125,7 +1118,7 @@ void repeating_words_just_learnded_and_forgotten()
 			if (c == 72)  // —трелка вверх
 			{
 				w.rightAnswersNum = 1;
-				wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, false);
+				wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
 				break;
 			}
 			else
@@ -1133,7 +1126,7 @@ void repeating_words_just_learnded_and_forgotten()
 				{
 					forgottenWordsIndices.push_back(wordsToRepeat[i]);
 					set_word_as_just_hardly_learned(w);
-					wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, true);
+					wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
 					break;
 				}
 		}
@@ -1203,7 +1196,7 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 				else
 					put_word_to_end_of_random_repeat_queue(w);  // “акие слова и так часто повтор€ютс€ в check_by_time, поэтому нечего им делать в рандомной проверке. 
 				                                                // Ћибо в очереди уже слишком много внеочередных слов, поэтому, слова, которые помних хорошо, не будем добавл€ть вне очереди
-				wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, false);
+				wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
 				break;
 			}
 			else
@@ -1211,7 +1204,7 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 				{
 					forgottenWordsIndices.push_back(wordsToRepeat[i]);
 					set_word_as_just_hardly_learned(w);
-					wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, true);
+					wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
 					break;
 				}
 				else
@@ -1220,7 +1213,7 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 						forgottenWordsIndices.push_back(wordsToRepeat[i]);
 						w.rightAnswersNum = std::min(w.rightAnswersNum, RIGHT_ANSWERS_FALLBACK);
 						put_word_to_middle_or_end_of_random_repeat_queue(w);
-						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, true);
+						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
 						break;
 					}
 		}
@@ -1389,7 +1382,7 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 				{
 					forgottenWordsIndices.push_back(wordToRepeatIndex);
 					set_word_as_just_hardly_learned(w);
-					wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, true);
+					wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
 					break;
 				}
 				else
