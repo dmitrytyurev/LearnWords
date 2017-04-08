@@ -13,6 +13,11 @@
 #include <conio.h>
 #include <algorithm>
 #include <functional>
+#include <chrono>
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 const static int MAX_RIGHT_REPEATS_GLOBAL_N = 13;
 // !!! Если время сутки или больше, то вычитается 0.1f 
@@ -29,41 +34,39 @@ const int ADDITIONAL_REPEAT_THRESHOLD_DAYS = 3;  // Граница в днях между словами
 												 // Используется при рандомном выборе слов для проверки, время проверки которых ещё не настало,
 												 // но проверка была запрошена пользователем
 const int RIGHT_ANSWERS_FALLBACK = 6;            // Номер шага, на который откатывается слово при check_by_time, если помним неуверенно
-const int RAND_REPEATS_GLOBAL_N = 8;             // Если rightAnswersNum >= этому значению, то при check_by_time при верном ответе слово помещается в середину очереди рандомной проверки
 const int MIN_CLOSE_WORD_LEN = 5;                // Столько первых символов берётся из слов перевода, чтобы искать слова с похожими переводами
 const float PERCENT_FORGOT_INSERT_QUEUE = 0.3f;  // Процент от длины очереди неизученных слов куда вставим забытое слово
+const int FAST_QUEUE_REPEAT_AFTER_N_DAYS = 2;    // После попадения в быструю очередь рандомного повтора, слово станет доступным через это число суток
+const int QUICK_ANSWER_TIME_MS = 2500;           // Время быстрого ответа в миллисекундах
 
 const char* logFileName = "log.log";
+
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 struct WordsOnDisk
 {
 	struct WordInfo
 	{
-		static const int RANDOM_REPEAT_FLAG = 1000000000;
-
 		WordInfo() { clear_all(); }
 		void clear_all() 
 		{	
-			rightAnswersNum = 0; dateOfRepeat = 0; cantRandomTestedAfter = 0; randomTestIncID = 0;
+			rightAnswersNum = 0; 
+			dateOfRepeat = 0; 
+			cantRandomTestedAfter = 0; 
+			randomTestIncID = 0; 
+			cantRandomTestedBefore = 0; 
+			wordsToTest = 0;
+			isInFastRandomQueue = false;
+			isNeedSkipOneRandomLoop = false;
 		}
 
 		bool isWordJustLearnedOrForgotten(time_t curTime) const
 		{
 			return (rightAnswersNum == 1) &&   // Это условие не даёт попасть в выборку словам высоких уровней, до повторения которых осталось несколько часов
 				((dateOfRepeat >= curTime) && (dateOfRepeat <= curTime + addDaysMax[1] * SECONDS_IN_DAY));  // А это условие не даёт попасть выборку только что изученным словам на следующий день
-		}
-
-		bool hasWordAddedNotAtEnd() const
-		{
-			return randomTestIncID >= RANDOM_REPEAT_FLAG;
-		}
-
-		int getRandomTestIncIdWithoutFlag() const
-		{
-			if (randomTestIncID < RANDOM_REPEAT_FLAG)
-				return randomTestIncID;
-			else
-				return randomTestIncID - RANDOM_REPEAT_FLAG;
 		}
 
 		bool canRandomTested(time_t curTime) const
@@ -73,6 +76,9 @@ struct WordsOnDisk
 
 			if (cantRandomTestedAfter != 0 && curTime >= cantRandomTestedAfter)  
 				return false;  // Слово нельзя использовать в случайном повторе потому, что осталось меньше половины времени до проверки его знания
+
+			if (cantRandomTestedBefore != 0 && curTime <= cantRandomTestedBefore)
+				return false;  // Слово нельзя использовать в случайном повторе поскольку мы недавно его повторяли и нужно выждать немного перед ещё одним повтором
 
 			if (isWordJustLearnedOrForgotten(curTime))
 				return false; // Слово нельзя использовать в случайном повторе потому, что оно сейчас выводится в списке только что изученных или забытых слов. 
@@ -87,10 +93,14 @@ struct WordsOnDisk
 		int dateOfRepeat;          // Дата, когда нужно повторить слово (время в секундах с 1970 года). По-дефолту = 0. Имеет смысл, если rightAnswersNum >= 1
 		
 		int cantRandomTestedAfter; // Если !=0, то после этого времени нельзя использовать слово в рандомном тесте, ведь скоро уже плановая проверка слова. Иначе будет не чистый тест.
-		int randomTestIncID;       // У только что рандомно повторённого слова ставится на 1 больше, чем у всех имеющихся. Если хотим повторить слово раньше (ставим ему такое же значение,
-		                           // как у одно из слов примерно в середине списка. Но если позже есть слова, которые тоже вставлялись вне очереди, то от последнего такого слова
-		                           // пропускаем одно слово и берём следующее и используем его randomTestIncID (чередуем вставленные слова через 1 со старыми, чтобы они не подвисали)
-								   // Если данное слово было вставлено не в конец, то к нему прибавляется RANDOM_REPEAT_FLAG в качестве признака
+		int randomTestIncID;       // У только что рандомно повторённого слова ставится на 1 больше, чем у всех имеющихся. 
+		bool isInFastRandomQueue;  // Находится ли слово в быстрой очереди рандомного повтора
+		bool isNeedSkipOneRandomLoop; // Нужно ли пропустить один круг рандомного повтора слова
+		int  cantRandomTestedBefore;  // Если !=0, то до этого времени нельзя использовать слово в рандомном тесте, поскольку мы недавно его повторяли и нужно выждать немного перед ещё одним повтором
+		int  wordsToTest;             // Как только до очередного check_word_by_time остаётся меньше половины времени, слово становится недоступно для рандомного повтора. В этот момент
+		                              // запоминаем сколько слов было перед данным словом в очереди рандомного повтора. А в тот момент, когда слово снова станет доступно для рандомного
+		                              // повтора, мы изменим randomTestIncID, чтобы перед словом снова стало столько же слов впереди.
+
 		std::string closeWords;    // Английские слова через ';', которые нужно показать вместе с этим словом (например, похожие по написанию, которые мы спутали с данным словом)
 	};
 
@@ -101,6 +111,7 @@ struct WordsOnDisk
 	};
 
 	void load_from_file(const char* fullFileName);
+	void load_from_file_legacy(const char* fullFileName);
 	void save_to_file();
 	void fill_date_of_repeate_and_save(WordInfo& w, time_t currentTime);
 
@@ -113,6 +124,10 @@ struct WordsOnDisk
 	std::string           _fullFileName;
 };
 
+//===============================================================================================
+// 
+//===============================================================================================
+
 struct WordToLearn
 {
 	WordToLearn() : _index(0), _counterShown(0), _localRightAnswersNum(0), _wasLastFail(0) {}
@@ -123,17 +138,29 @@ struct WordToLearn
 	bool _wasLastFail;           // true, если при последней проверке слова нажали стрелку вниз (забыли слово)
 };
 
+//===============================================================================================
+// 
+//===============================================================================================
 
 WordsOnDisk wordsOnDisk;
 time_t curTime = 0;
 std::vector<int> forgottenWordsIndices; // Индексы слов, которые были забыты при последней проверке слов
 
-void put_word_to_middle_or_end_of_random_repeat_queue(WordsOnDisk::WordInfo& w);
+//===============================================================================================
+// 
+//===============================================================================================
+
 void calc_words_for_random_repeat(int* totalToRandomRepeat, int* middleQueued);
-void log_random_test_wors();
+void log_random_test_words();
 int get_word_to_repeat();
-void put_word_to_end_of_random_repeat_queue(WordsOnDisk::WordInfo& w);
+void put_word_to_end_of_random_repeat_queue_common(WordsOnDisk::WordInfo& w);
+void put_word_to_end_of_random_repeat_queue_fast(WordsOnDisk::WordInfo& w, time_t currentTime);
+void put_word_to_end_of_random_repeat_queue_common_same_position(WordsOnDisk::WordInfo& w);
 void set_word_as_just_hardly_learned(WordsOnDisk::WordInfo& w);
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 const char* get_time_in_text(time_t curTime)
 {
@@ -144,15 +171,27 @@ const char* get_time_in_text(time_t curTime)
 	return buf;
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
+
 inline int rand_int(int min, int max)
 {
 	return   rand() * (max - min + 1) / (RAND_MAX + 1) + min;
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
+
 inline float rand_float(float min, float max)
 {
 	return   rand() * (max - min) / RAND_MAX + min;
 }
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 char getch_filtered()  // Игнорирует код -32 (встречается, например, у стрелок)
 {
@@ -162,6 +201,10 @@ char getch_filtered()  // Игнорирует код -32 (встречается, например, у стрелок)
 	while (c == -32);
 	return c;
 }
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 void _cdecl log(char *text, ...)
 {
@@ -182,11 +225,18 @@ void _cdecl log(char *text, ...)
 	fclose(f);
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
 
 bool WordsOnDisk::is_digit(char c)
 {
 	return  c >= '0'  &&  c <= '9';
 }
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 std::string WordsOnDisk::load_string_from_array(const std::vector<char>& buffer, int* indexToRead)
 {
@@ -209,6 +259,10 @@ std::string WordsOnDisk::load_string_from_array(const std::vector<char>& buffer,
 	return str;
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
+
 int WordsOnDisk::load_int_from_array(const std::vector<char>& buffer, int* indexToRead)
 {
 	int number = 0;
@@ -224,7 +278,11 @@ int WordsOnDisk::load_int_from_array(const std::vector<char>& buffer, int* index
 	return 0;
 }
 
-void WordsOnDisk::load_from_file(const char* fullFileName)
+//===============================================================================================
+// 
+//===============================================================================================
+
+void WordsOnDisk::load_from_file_legacy(const char* fullFileName)
 {
 	_fullFileName = fullFileName;
 	std::ifstream file(fullFileName, std::ios::binary | std::ios::ate);
@@ -330,17 +388,181 @@ void WordsOnDisk::load_from_file(const char* fullFileName)
 			}
 		}
 
+if (wi.randomTestIncID > 1000000000)
+{
+	wi.randomTestIncID -= 1000000000;
+	wi.isInFastRandomQueue = true;
+}
+
 		// Занести WordInfo в вектор
 		_words.push_back(wi);
-//printf("%s = %d\n", wi.word.c_str(), parseIndex);
-//printf("%s = %d\n", wi.translation.c_str(), parseIndex);
-//printf("%d = %d\n", wi.rightAnswersNum, parseIndex);
-//printf("%d = %d\n", wi.dateOfRepeat, parseIndex);
 
 		if (buffer[parseIndex] == 0)
 			return;
 	}
 }
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+void WordsOnDisk::load_from_file(const char* fullFileName)
+{
+	_fullFileName = fullFileName;
+	std::ifstream file(fullFileName, std::ios::binary | std::ios::ate);
+	std::streamsize size = file.tellg();
+	if (size == -1)
+	{
+		printf("Error opening file %s\n", fullFileName);
+		exit(1);
+	}
+	file.seekg(0, std::ios::beg);
+
+	std::vector<char> buffer(size + 1);
+	buffer[size] = 0;
+	if (!file.read(buffer.data(), size))
+	{
+		printf("Error reading file %s\n", fullFileName);
+		exit(1);
+	}
+
+	int parseIndex = 0;
+
+	// Читаем пары исключений
+	while (true)
+	{
+		CompareExcludePair cep;
+
+		cep.word1 = load_string_from_array(buffer, &parseIndex);
+		if (cep.word1.length() == 0)         // При поиске начала строки был встречен конец файла (например, файл заканчивается пустой строкой)
+		{
+			printf("Sintax error in word %s", cep.word1.c_str());
+			exit(1);
+		}
+
+		if (cep.word1 == "Main block")
+			break;
+
+		cep.word2 = load_string_from_array(buffer, &parseIndex);
+
+		// Занести CompareExcludePair в вектор
+		_compareExcludePairs.push_back(cep);
+
+		while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd)
+			++parseIndex;
+
+		if (buffer[parseIndex] == 0)
+		{
+			printf("Sintax error in word");
+			exit(1);
+		}
+	}
+
+	// Читаем основной блок слов
+	while (true)
+	{
+		WordInfo wi;
+
+		wi.word = load_string_from_array(buffer, &parseIndex);
+		if (wi.word.length() == 0)         // При поиске начала строки был встречен конец файла (например, файл заканчивается пустой строкой)
+			return;
+		wi.translation = load_string_from_array(buffer, &parseIndex);
+
+		while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
+			++parseIndex;
+
+		if (is_digit(buffer[parseIndex]))  // Читаем параметры
+		{
+			wi.rightAnswersNum = load_int_from_array(buffer, &parseIndex);
+			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
+				++parseIndex;
+			if (buffer[parseIndex] == 0 || buffer[parseIndex] == 0xd)
+			{
+				printf("Sintax error in word %s", wi.word.c_str());
+				exit(1);
+			}
+			// ---------
+			wi.dateOfRepeat = load_int_from_array(buffer, &parseIndex);
+			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
+				++parseIndex;
+			if (buffer[parseIndex] == 0 || buffer[parseIndex] == 0xd)
+			{
+				printf("Sintax error in word %s", wi.word.c_str());
+				exit(1);
+			}
+			// ---------
+			wi.randomTestIncID = load_int_from_array(buffer, &parseIndex);
+			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
+				++parseIndex;
+			if (buffer[parseIndex] == 0 || buffer[parseIndex] == 0xd)
+			{
+				printf("Sintax error in word %s", wi.word.c_str());
+				exit(1);
+			}
+
+			// ---------
+			wi.cantRandomTestedAfter = load_int_from_array(buffer, &parseIndex);
+			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
+				++parseIndex;
+			if (buffer[parseIndex] == 0 || buffer[parseIndex] == 0xd)
+			{
+				printf("Sintax error in word %s", wi.word.c_str());
+				exit(1);
+			}
+
+			// ---------
+			wi.isInFastRandomQueue = (bool) load_int_from_array(buffer, &parseIndex);
+			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
+				++parseIndex;
+			if (buffer[parseIndex] == 0 || buffer[parseIndex] == 0xd)
+			{
+				printf("Sintax error in word %s", wi.word.c_str());
+				exit(1);
+			}
+
+			// ---------
+			wi.isNeedSkipOneRandomLoop = (bool) load_int_from_array(buffer, &parseIndex);
+			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
+				++parseIndex;
+			if (buffer[parseIndex] == 0 || buffer[parseIndex] == 0xd)
+			{
+				printf("Sintax error in word %s", wi.word.c_str());
+				exit(1);
+			}
+
+			// ---------
+			wi.cantRandomTestedBefore = load_int_from_array(buffer, &parseIndex);
+			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
+				++parseIndex;
+			if (buffer[parseIndex] == 0 || buffer[parseIndex] == 0xd)
+			{
+				printf("Sintax error in word %s", wi.word.c_str());
+				exit(1);
+			}
+
+			// ---------
+			wi.wordsToTest = load_int_from_array(buffer, &parseIndex);
+			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && buffer[parseIndex] != '"')
+				++parseIndex;
+			if (buffer[parseIndex] == '"')
+			{
+				wi.closeWords = load_string_from_array(buffer, &parseIndex);
+				while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd)
+					++parseIndex;
+			}
+		}
+
+		// Занести WordInfo в вектор
+		_words.push_back(wi);
+
+		if (buffer[parseIndex] == 0)
+			return;
+	}
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 void WordsOnDisk::save_to_file()
 {
@@ -363,21 +585,21 @@ void WordsOnDisk::save_to_file()
 
 	for (const auto& e:_words)
 	{
-		if (e.rightAnswersNum == 0  && 
-			e.dateOfRepeat == 0 && 
-			e.randomTestIncID == 0 &&
-			e.cantRandomTestedAfter == 0 &&
-			e.closeWords.length() == 0)
+		if (e.rightAnswersNum == 0)
 			fprintf(f, "\"%s\" \"%s\"\n", e.word.c_str(), e.translation.c_str());
 		else
 		{
-			fprintf(f, "\"%s\" \"%s\" %d %d %d %d", 
+			fprintf(f, "\"%s\" \"%s\" %d %d %d %d %d %d %d %d", 
 				e.word.c_str(),
 				e.translation.c_str(),
 				e.rightAnswersNum,
 				e.dateOfRepeat,
 				e.randomTestIncID,
-				e.cantRandomTestedAfter);
+				e.cantRandomTestedAfter,
+				int(e.isInFastRandomQueue),
+				int(e.isNeedSkipOneRandomLoop),
+				e.cantRandomTestedBefore,
+				e.wordsToTest);
 
 			if (e.closeWords.length())
 				fprintf(f, " \"%s\"", e.closeWords.c_str());
@@ -387,6 +609,10 @@ void WordsOnDisk::save_to_file()
 	}
 	fclose(f);
 }
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 void WordsOnDisk::fill_date_of_repeate_and_save(WordsOnDisk::WordInfo& w, time_t currentTime)
 {
@@ -405,6 +631,9 @@ void WordsOnDisk::fill_date_of_repeate_and_save(WordsOnDisk::WordInfo& w, time_t
 	save_to_file();
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
 
 void print_buttons_hints(const std::string& str, bool needRightKeyHint)
 {
@@ -412,6 +641,10 @@ void print_buttons_hints(const std::string& str, bool needRightKeyHint)
 	if (needRightKeyHint)
 		printf("  Стрелка вправо - вспомнил все значения, но с трудом\n");
 }
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 void print_close_words_user_selected(int wordIndex)
 {
@@ -422,7 +655,11 @@ void print_close_words_user_selected(int wordIndex)
 			printf("%s %s\n", curWord.word.c_str(), curWord.translation.c_str());
 }
 
-void clear_screen(char fill = ' ') 
+//===============================================================================================
+// 
+//===============================================================================================
+
+void clear_screen(char fill = ' ')
 {
 	COORD tl = { 0,0 };
 	CONSOLE_SCREEN_BUFFER_INFO s;
@@ -433,6 +670,10 @@ void clear_screen(char fill = ' ')
 	FillConsoleOutputAttribute(console, s.wAttributes, cells, tl, &written);
 	SetConsoleCursorPosition(console, tl);
 }
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 void recalc_stats(time_t curTime, int* wordsTimeToRepeatNum, int* wordsJustLearnedAndForgottenNum, int wordsByLevel[MAX_RIGHT_REPEATS_GLOBAL_N + 1])
 {
@@ -465,9 +706,13 @@ void recalc_stats(time_t curTime, int* wordsTimeToRepeatNum, int* wordsJustLearn
 	//	printf("\n%d  - Words that is time to repeat\n\n", wordsTimeToRepeatNum);
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
+
 int main_menu_choose_mode()
 {
-log_random_test_wors();
+log_random_test_words();
 
 	int wordsTimeToRepeatNum = 0;
 	int wordsJustLearnedAndForgottenNum = 0;
@@ -514,6 +759,10 @@ log_random_test_wors();
 	return 0;
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
+
 int enter_number_from_console()
 {
 	char buffer[256] = {0};
@@ -552,6 +801,9 @@ int enter_number_from_console()
 	return number;
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
 
 void put_to_queue(std::vector<WordToLearn>& queue, const WordToLearn& wordToPut, float percent)
 {
@@ -563,6 +815,10 @@ void put_to_queue(std::vector<WordToLearn>& queue, const WordToLearn& wordToPut,
 	queue.insert(queue.begin() + pos, wordToPut);
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
+
 void wait_time(int waitTimeSec)
 {
 	time_t t = time(NULL);
@@ -571,6 +827,10 @@ void wait_time(int waitTimeSec)
 		Sleep(100);
 	}
 }
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 bool is_russian_symbol(unsigned int c)
 {
@@ -582,6 +842,10 @@ bool is_russian_symbol(unsigned int c)
 	return false;
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
+
 bool is_symbol(unsigned int c)
 {
 	if (is_russian_symbol(c))
@@ -590,7 +854,9 @@ bool is_symbol(unsigned int c)
 	return (c >= 'a'  &&  c <= 'z') || (c >= 'A'  &&  c <= 'Z');
 }
 
-
+//===============================================================================================
+// 
+//===============================================================================================
 
 void print_masked_translation(const char* _str, int symbolsToShowNum)
 {
@@ -625,6 +891,10 @@ void print_masked_translation(const char* _str, int symbolsToShowNum)
 	}
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
+
 class CloseTranslationWordsManager  // FIXME!!! избавиться от прямого использования глобального объекта WordsOnDisk. Передавать ссылку на него в методы.
 {
 public:
@@ -652,6 +922,10 @@ private:
 	std::vector<CloseWordFound> closeWordsFound;
 };
 
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 void CloseTranslationWordsManager::get_separate_words_from_translation(const char* __str, std::vector<std::string>& outWords)
 {
@@ -699,6 +973,10 @@ void CloseTranslationWordsManager::get_separate_words_from_translation(const cha
 	}
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
+
 bool CloseTranslationWordsManager::is_word_in_filter_already(const std::string& word1, const std::string& word2)
 {
 	for (const auto& cep:wordsOnDisk._compareExcludePairs)
@@ -710,6 +988,10 @@ bool CloseTranslationWordsManager::is_word_in_filter_already(const std::string& 
 }
 
 
+//===============================================================================================
+// 
+//===============================================================================================
+
 bool CloseTranslationWordsManager::is_word_appended_to_translation_already(const std::string& engWord)
 {
 	WordsOnDisk::WordInfo& wSrc = wordsOnDisk._words[srcWordIndex];
@@ -719,6 +1001,10 @@ bool CloseTranslationWordsManager::is_word_appended_to_translation_already(const
 
 	return false;
 }
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 void CloseTranslationWordsManager::collect_close_words_to(std::vector<CloseWordFound>& closeWordsFound, const std::string& rusWord, int srcWordIndex, const std::string& engWord)
 {
@@ -757,6 +1043,10 @@ void CloseTranslationWordsManager::collect_close_words_to(std::vector<CloseWordF
 	}
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
+
 void CloseTranslationWordsManager::print_close_words_by_translation()
 {
 	puts("\n\n\n\n");
@@ -773,6 +1063,10 @@ void CloseTranslationWordsManager::print_close_words_by_translation()
 		printf("%d. %s: %s\n", i+1, closeWordsFound[i].engWord.c_str(), closeWordsFound[i].translation.c_str());
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
+
 void CloseTranslationWordsManager::add_exclusion(int n)
 {
 	if (n >= closeWordsFound.size())
@@ -784,6 +1078,10 @@ void CloseTranslationWordsManager::add_exclusion(int n)
 	cep.word2 = closeWordsFound[n].engWord;
 	wordsOnDisk._compareExcludePairs.push_back(cep);
 }
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 void CloseTranslationWordsManager::add_close_eng_word_to_translation(int n)
 {
@@ -819,6 +1117,9 @@ void CloseTranslationWordsManager::add_close_eng_word_to_translation(int n)
 		w.translation.insert(pos, " (" + closeWordsFound[n].engWord + ")");
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
 
 void CloseTranslationWordsManager::process_user_input(char c)
 {
@@ -840,6 +1141,10 @@ void CloseTranslationWordsManager::process_user_input(char c)
 }
 
 
+//===============================================================================================
+// 
+//===============================================================================================
+
 int get_show_word_not_early_than(bool wasLastFail)
 {
 	if (wasLastFail == false)
@@ -847,6 +1152,10 @@ int get_show_word_not_early_than(bool wasLastFail)
 
 	return static_cast<int>(PERCENT_FORGOT_INSERT_QUEUE * SHOW_WORD_NOT_EARLY_THAN);
 }
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 void learning_words()
 {
@@ -1025,7 +1334,7 @@ void learning_words()
 					put_to_queue(learned, wordToLearn, 1);
 					break;
 				case FromWhatSource::FROM_RANDOM_REPEAT_LIST:
-					put_word_to_end_of_random_repeat_queue(w);
+					put_word_to_end_of_random_repeat_queue_common(w);
 					wordsOnDisk.save_to_file();
 					break;
 				}
@@ -1060,11 +1369,19 @@ void learning_words()
 	}
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
+
 void set_word_as_just_hardly_learned(WordsOnDisk::WordInfo& w)
 {
 	w.clear_all();
 	w.rightAnswersNum = 1;
 }
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 void repeating_words_just_learnded_and_forgotten()
 {
@@ -1133,6 +1450,10 @@ void repeating_words_just_learnded_and_forgotten()
 	}
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
+
 void checking_words_by_time()
 {
 	forgottenWordsIndices.clear();
@@ -1160,6 +1481,7 @@ void checking_words_by_time()
 
 		clear_screen();
 		printf("\n\n%s\n", w.word.c_str());
+		auto t_start = std::chrono::high_resolution_clock::now();
 log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk._fullFileName.c_str(), get_time_in_text(curTime));
 		char c = 0;
 		do
@@ -1169,6 +1491,9 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 				return;
 		} while (c != ' ');
 
+		auto t_end = std::chrono::high_resolution_clock::now();
+		bool isQuickAnswer = (std::chrono::duration<double, std::milli>(t_end - t_start).count()) < QUICK_ANSWER_TIME_MS;
+		
 		while (true)
 		{
 			clear_screen();
@@ -1184,18 +1509,18 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 				return;
 			if (c == 72)  // Стрелка вверх
 			{
-				if (++w.rightAnswersNum > MAX_RIGHT_REPEATS_GLOBAL_N)
-					w.rightAnswersNum = MAX_RIGHT_REPEATS_GLOBAL_N;
-
-				int totalToRandomRepeat = 0;
-				int middleQueued = 0;
-				calc_words_for_random_repeat(&totalToRandomRepeat, &middleQueued);
-
-				if (w.rightAnswersNum >= RAND_REPEATS_GLOBAL_N  &&  middleQueued < 20) // FIXME!!! Вынести константу
-					put_word_to_middle_or_end_of_random_repeat_queue(w);
+				if (isQuickAnswer)
+				{
+					w.rightAnswersNum += 2;
+					put_word_to_end_of_random_repeat_queue_common(w);
+				}
 				else
-					put_word_to_end_of_random_repeat_queue(w);  // Такие слова и так часто повторяются в check_by_time, поэтому нечего им делать в рандомной проверке. 
-				                                                // Либо в очереди уже слишком много внеочередных слов, поэтому, слова, которые помних хорошо, не будем добавлять вне очереди
+				{
+					w.rightAnswersNum += 1;
+					put_word_to_end_of_random_repeat_queue_common_same_position(w);
+				}
+
+				w.rightAnswersNum = std::min(w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
 				wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
 				break;
 			}
@@ -1212,7 +1537,7 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 					{
 						forgottenWordsIndices.push_back(wordsToRepeat[i]);
 						w.rightAnswersNum = std::min(w.rightAnswersNum, RIGHT_ANSWERS_FALLBACK);
-						put_word_to_middle_or_end_of_random_repeat_queue(w);
+						put_word_to_end_of_random_repeat_queue_fast(w, curTime);
 						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
 						break;
 					}
@@ -1221,16 +1546,27 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 }
 
 
-int calc_max_randomTestIncID()
+//===============================================================================================
+// 
+//===============================================================================================
+
+int calc_max_randomTestIncID(bool isFromFastQueue)
 {
-	int max = wordsOnDisk._words[0].getRandomTestIncIdWithoutFlag();
-	for (int i = 1; i < wordsOnDisk._words.size(); ++i)
+	int max = -1;
+	for (int i = 0; i < wordsOnDisk._words.size(); ++i)
 	{
-		max = std::max(max, wordsOnDisk._words[i].getRandomTestIncIdWithoutFlag());
+		WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
+
+		if (w.isInFastRandomQueue == isFromFastQueue)
+			max = std::max(max, wordsOnDisk._words[i].randomTestIncID);
 	}
 	return max;
 }
 
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 void calc_words_for_random_repeat(int* totalToRandomRepeat, int* middleQueued)
 {
@@ -1242,91 +1578,150 @@ void calc_words_for_random_repeat(int* totalToRandomRepeat, int* middleQueued)
 		if (w.canRandomTested(curTime))
 		{
 			++(*totalToRandomRepeat);
-
-			if (w.hasWordAddedNotAtEnd())
-				++(*middleQueued);
 		}
 	}
 }
 
-void fill_indices_of_random_repeat_words(std::vector<int> &indicesOfWords)
+//===============================================================================================
+// 
+//===============================================================================================
+
+void fill_indices_of_random_repeat_words(std::vector<int> &indicesOfWords, bool isFromFastQueue)
 {
 	for (int i = 0; i < wordsOnDisk._words.size(); ++i)
 	{
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
 
-		if (w.canRandomTested(curTime))
+		if (w.canRandomTested(curTime)  &&  w.isInFastRandomQueue == isFromFastQueue)
 			indicesOfWords.push_back(i);
 	}
 
 	std::sort(indicesOfWords.begin(), indicesOfWords.end(), [](int i, int j) { 
-		int ival = wordsOnDisk._words[i].getRandomTestIncIdWithoutFlag();
-		int jval = wordsOnDisk._words[j].getRandomTestIncIdWithoutFlag();
-		if (ival == jval)
-			return wordsOnDisk._words[i].randomTestIncID < wordsOnDisk._words[j].randomTestIncID;
-		return  ival < jval; });
+		return wordsOnDisk._words[i].randomTestIncID < wordsOnDisk._words[j].randomTestIncID; });
 }
 
-void log_random_test_wors()
+//===============================================================================================
+// 
+//===============================================================================================
+
+void log_random_test_words()
 {
 	std::vector<int> indicesOfWords;   // Индексы подходящих для проверки слов
-	fill_indices_of_random_repeat_words(indicesOfWords); // Заполним indicesOfWords
+	fill_indices_of_random_repeat_words(indicesOfWords, false); // Заполним indicesOfWords
 	log("=== Words to random repeat = %d\n", indicesOfWords.size());
 	for (const auto& index: indicesOfWords)
 	{
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[index];
 		log("  %s %d\n", w.word.c_str(), w.randomTestIncID);
 	}
+
+	indicesOfWords.clear();
+	fill_indices_of_random_repeat_words(indicesOfWords, true);
+	log("=== Fast words to random repeat = %d\n", indicesOfWords.size());
+	for (const auto& index : indicesOfWords)
+	{
+		WordsOnDisk::WordInfo& w = wordsOnDisk._words[index];
+		log("  %s %d\n", w.word.c_str(), w.randomTestIncID);
+	}
 }
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+int get_word_to_repeat_inner()
+{
+	std::vector<int> indicesOfWordsCommon;   // Индексы подходящих для проверки слов из общей очереди
+	std::vector<int> indicesOfWordsFast;     // Индексы подходящих для проверки слов из быстрой очереди
+
+	fill_indices_of_random_repeat_words(indicesOfWordsCommon, false);  // Заполним indicesOfWordsCommon
+	fill_indices_of_random_repeat_words(indicesOfWordsFast,   true);   // Заполним indicesOfWordsTrue
+
+	if ((rand_float(0, 1) < 0.5f || indicesOfWordsCommon.size() == 0) && indicesOfWordsFast.size() > 0)
+	{ 
+		return indicesOfWordsFast[0];
+	}
+	else
+	{
+		if (indicesOfWordsCommon.size() == 0)
+			return -1;
+		else
+			return indicesOfWordsCommon[rand_int(0, std::min(0u, indicesOfWordsCommon.size() - 1))];  // FIXME!!! 4u
+	}
+}
+
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 int get_word_to_repeat()
 {
-	std::vector<int> indicesOfWords;   // Индексы подходящих для проверки слов
-									   
-	fill_indices_of_random_repeat_words(indicesOfWords); // Заполним indicesOfWords
+	while (true)
+	{
+		int index = get_word_to_repeat_inner();
+		if (index == -1)
+			return index;
 
-	if (indicesOfWords.size() == 0)
-		return -1;
+		WordsOnDisk::WordInfo& w = wordsOnDisk._words[index];
+		if (w.isNeedSkipOneRandomLoop == false)
+			return index;
 
-	return indicesOfWords[rand_int(0, std::min(4u, indicesOfWords.size() - 1))];
+		put_word_to_end_of_random_repeat_queue_common(w);
+	}
 }
 
-void put_word_to_end_of_random_repeat_queue(WordsOnDisk::WordInfo& w)
+//===============================================================================================
+// 
+//===============================================================================================
+
+void put_word_to_end_of_random_repeat_queue_common(WordsOnDisk::WordInfo& w)
 {
-	w.randomTestIncID = calc_max_randomTestIncID() + 1;
+	w.randomTestIncID = calc_max_randomTestIncID(false) + 1;
+	w.isInFastRandomQueue = false;
+	w.isNeedSkipOneRandomLoop = false;
+	w.cantRandomTestedBefore = 0;
+	w.wordsToTest = 0;
 }
 
-void put_word_to_middle_or_end_of_random_repeat_queue(WordsOnDisk::WordInfo& w)
+//===============================================================================================
+// 
+//===============================================================================================
+
+void put_word_to_end_of_random_repeat_queue_common_same_position(WordsOnDisk::WordInfo& w)
 {
-	std::vector<int> indicesOfWords;   // Индексы подходящих для проверки слов
+	int keepWordsToTest = w.wordsToTest;
+	put_word_to_end_of_random_repeat_queue_common(w);
 
-	fill_indices_of_random_repeat_words(indicesOfWords); // Заполним indicesOfWords индексами слов, подходящих для рандомной проверке в порядке их очереди
-
-	if (indicesOfWords.size() == 0)
+	if (keepWordsToTest == 0)
 		return;
 
-	// Найдём индекс последнего слова, которое добавлялось в середину списка  (либо -1, если такого нет)
-	int maxIndex = indicesOfWords.size() - 1;
-	while (maxIndex >= 0 && wordsOnDisk._words[indicesOfWords[maxIndex]].hasWordAddedNotAtEnd() == false)
-	{
-		--maxIndex;
-	}
-
-	int desiredIndex = 50;       // FIXME!!! Вынести константу    // У этого слова хотим взять индекс рандомной проверки 
-	if (desiredIndex <= maxIndex)
-		desiredIndex = maxIndex + 1;
-
-	if (desiredIndex >= indicesOfWords.size())
-	{
-		put_word_to_end_of_random_repeat_queue(w);
-		return;
-	}
-
-	int desiredIdWithoutFlag = wordsOnDisk._words[indicesOfWords[desiredIndex]].getRandomTestIncIdWithoutFlag();
-
-	w.randomTestIncID = WordsOnDisk::WordInfo::RANDOM_REPEAT_FLAG + desiredIdWithoutFlag;
+	std::vector<int> indicesOfWordsCommon;   // Индексы подходящих для проверки слов из общей очереди
+	fill_indices_of_random_repeat_words(indicesOfWordsCommon, false);  // Заполним indicesOfWordsCommon
+	
+	int index = std::min(keepWordsToTest, int(indicesOfWordsCommon.size()-1));
+	
+	WordsOnDisk::WordInfo& w2 = wordsOnDisk._words[indicesOfWordsCommon[index]];
+log("same: index=%d, w2.randomTestIncID=%d", index, w2.randomTestIncID);
+	w.randomTestIncID = w2.randomTestIncID;
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
+
+void put_word_to_end_of_random_repeat_queue_fast(WordsOnDisk::WordInfo& w, time_t currentTime)
+{
+	w.randomTestIncID = calc_max_randomTestIncID(true) + 1;
+	w.isInFastRandomQueue = true;
+	w.isNeedSkipOneRandomLoop = false;
+	w.cantRandomTestedBefore = currentTime + int(FAST_QUEUE_REPEAT_AFTER_N_DAYS * SECONDS_IN_DAY);;
+	w.wordsToTest = 0;
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 void repeating_random_words()
 {
@@ -1348,6 +1743,7 @@ void repeating_random_words()
 
 		clear_screen();
 		printf("\n\n%s\n", w.word.c_str());
+		auto t_start = std::chrono::high_resolution_clock::now();
 log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._fullFileName.c_str(), get_time_in_text(curTime));
 		char c = 0;
 		do
@@ -1356,6 +1752,9 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 			if (c == 27)
 				return;
 		} while (c != ' ');
+
+		auto t_end = std::chrono::high_resolution_clock::now();
+		bool isQuickAnswer = (std::chrono::duration<double, std::milli>(t_end - t_start).count()) < QUICK_ANSWER_TIME_MS;
 
 		while (true)
 		{
@@ -1373,7 +1772,9 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 				return;
 			if (c == 72)  // Стрелка вверх (помним слово уверенно)
 			{
-				put_word_to_end_of_random_repeat_queue(w);
+				put_word_to_end_of_random_repeat_queue_common(w);
+				if (isQuickAnswer)
+					w.isNeedSkipOneRandomLoop = true;
 				wordsOnDisk.save_to_file();
 				break;
 			}
@@ -1389,7 +1790,7 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 					if (c == 77) // Стрелка вправо (помним слово не очень уверенно)
 					{
 						forgottenWordsIndices.push_back(wordToRepeatIndex);
-						put_word_to_middle_or_end_of_random_repeat_queue(w);
+						put_word_to_end_of_random_repeat_queue_fast(w, curTime);
 						wordsOnDisk.save_to_file();
 						break;
 					}
@@ -1397,21 +1798,51 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 	}
 }
 
+//===============================================================================================
+// У слов, которые вошли в зону недоступности для рандомного повтора по времени cantRandomTestedAfter
+// заполнить поле wordsToTest и сохранить на диск
+//===============================================================================================
+
+void process_words_became_unreachable_for_random_repeat(time_t currentTime)
+{
+	std::vector<int> indicesOfWordsCommon;   // Индексы подходящих для проверки слов из общей очереди
+
+	bool needToSave = false;
+	for (int i = 0; i < wordsOnDisk._words.size(); ++i)
+	{
+		WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
+
+		if (w.isInFastRandomQueue == false &&
+			w.wordsToTest == 0 &&
+			w.cantRandomTestedAfter != 0 &&
+			currentTime > w.cantRandomTestedAfter)
+		{
+			if (indicesOfWordsCommon.size() == 0)
+				fill_indices_of_random_repeat_words(indicesOfWordsCommon, false);  // Заполним indicesOfWordsCommon
+
+			int i2 = 0;                                                            // Посчитаем на какой позиции наше слово (сколько слов перед ним для показа)
+			for (i2 = 0; i2 < indicesOfWordsCommon.size(); ++i2)
+			{
+				WordsOnDisk::WordInfo& w2 = wordsOnDisk._words[indicesOfWordsCommon[i2]];
+				if (w2.randomTestIncID >= w.randomTestIncID)
+					break;
+			}
+
+			w.wordsToTest = i2;
+			needToSave = true;
+		}
+	}
+
+	if (needToSave)
+		wordsOnDisk.save_to_file();
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 int main(int argc, char* argv[])
 {
-
-	//std::vector<std::string> testvect;
-	//testvect.push_back(std::string("test1"));
-	//testvect.push_back(std::string("test2"));
-	//testvect.push_back(std::string("test3"));
-	//for (auto s:testvect)
-	//{
-	//	printf("%s\n", s.c_str());
-
-	//}
-	//return 0;
-
 	std::srand(unsigned(std::time(0)));
 	srand(time(NULL));
 
@@ -1425,12 +1856,16 @@ int main(int argc, char* argv[])
 	else
 		wordsOnDisk.load_from_file(argv[1]);
 
+//wordsOnDisk.save_to_file();
+//return 0;
+
 	setlocale(LC_ALL, "Russian");
 	while (true)
 	{
 		clear_screen();
 		curTime = time(NULL);   // Текущее время обновляется один раз перед показом главного меню, чтобы число слов для повтора в меню 
 		                        // и последующем запуске режима повтора (в нём используется запомненный здесь curTime) было одинаковым .
+		process_words_became_unreachable_for_random_repeat(curTime);
 		int keyPressed = main_menu_choose_mode();
 		switch (keyPressed)
 		{
@@ -1471,28 +1906,3 @@ int main(int argc, char* argv[])
 //wordsOnDisk.save_to_file();
 //return 0;
 
-
-
-//std::function<int(int, int)> f1 = [](int left, int right) { return left + right; };
-//std::function<int(int, int)> f2 = [](int left, int right) { return left - right; };
-//
-//void foo(std::function<int(int, int)> inf)
-//{
-//	printf("%d\n", inf(10, 3));
-//}
-//foo(f1);
-//foo(f2);
-//return 0;
-
-//if (++(wordToLearn._localWrongAnswersNum) == WRONG_ANSWERS_FOR_HARD_LEARNING)
-//w.isHardFirstLearned = 1;
-
-/*
-  Три очереди:
-  - Слова, которые хочется повторять чаще (забытые и полузабытые)
-
-
-
-
-
-*/
