@@ -150,7 +150,7 @@ std::vector<int> forgottenWordsIndices; // Индексы слов, которые были забыты при
 // 
 //===============================================================================================
 
-void calc_words_for_random_repeat(int* totalToRandomRepeat, int* middleQueued);
+void calc_words_for_random_repeat(int* totalToRandomRepeat, int* mainQueueSkipLoopCount, int* middleQueued);
 void log_random_test_words();
 int get_word_to_repeat();
 void put_word_to_end_of_random_repeat_queue_common(WordsOnDisk::WordInfo& w);
@@ -606,9 +606,10 @@ log_random_test_words();
 	printf("Выучено слов: %d, из них выучено хорошо : %d ", wordsLearnedTotal, wordsLearnedGood);
 
 	int mainQueueLen = 0;
+	int mainQueueSkipLoopCount = 0;
 	int fastQueueLen = 0;
-	calc_words_for_random_repeat(&mainQueueLen, &fastQueueLen);
-	printf("  Рандомный повтор: Основн=%d, Быстрая=%d ", mainQueueLen, fastQueueLen);
+	calc_words_for_random_repeat(&mainQueueLen, &mainQueueSkipLoopCount, &fastQueueLen);
+	printf("  Рандомный повтор: Основн=%d (из них skip=%d), Быстрая=%d ", mainQueueLen, mainQueueSkipLoopCount, fastQueueLen);
 
 	printf("\n");
 	printf("\n");
@@ -1461,11 +1462,19 @@ void fill_indices_of_random_repeat_words(std::vector<int> &indicesOfWords, bool 
 // 
 //===============================================================================================
 
-void calc_words_for_random_repeat(int* mainQueueLen, int* fastQueueLen)
+void calc_words_for_random_repeat(int* mainQueueLen, int* mainQueueSkipLoopCount, int* fastQueueLen)
 {
 	std::vector<int> indicesOfWords;
 	fill_indices_of_random_repeat_words(indicesOfWords, false);
 	*mainQueueLen = indicesOfWords.size();
+
+	*mainQueueSkipLoopCount = 0;
+	for (const auto& index : indicesOfWords)
+	{
+		WordsOnDisk::WordInfo& w = wordsOnDisk._words[index];
+		if (w.isNeedSkipOneRandomLoop)
+			++(*mainQueueSkipLoopCount);
+	}
 
 	fill_indices_of_random_repeat_words(indicesOfWords, true);
 	*fastQueueLen = indicesOfWords.size();
