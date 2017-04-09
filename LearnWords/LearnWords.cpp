@@ -603,7 +603,12 @@ log_random_test_words();
 		if (i >= 8)
 			wordsLearnedGood += wordsByLevel[i];
 	}
-	printf("Выучено слов: %d, из них выучено хорошо : %d ", wordsLearnedTotal, wordsLearnedGood);
+	static int prevWordsLearnedGood;
+	int deltaWordsLearnedGood = 0;
+	if (prevWordsLearnedGood > 0)
+		deltaWordsLearnedGood = wordsLearnedGood - prevWordsLearnedGood;
+	prevWordsLearnedGood = wordsLearnedGood;
+	printf("Выучено слов: %d, из них хорошо: %d (delta=%d)", wordsLearnedTotal, wordsLearnedGood, deltaWordsLearnedGood);
 
 	int mainQueueLen = 0;
 	int mainQueueSkipLoopCount = 0;
