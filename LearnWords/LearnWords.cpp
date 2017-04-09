@@ -36,7 +36,7 @@ const int ADDITIONAL_REPEAT_THRESHOLD_DAYS = 3;  // √раница в дн€х между словами
 const int RIGHT_ANSWERS_FALLBACK = 6;            // Ќомер шага, на который откатываетс€ слово при check_by_time, если помним неуверенно
 const int MIN_CLOSE_WORD_LEN = 5;                // —только первых символов берЄтс€ из слов перевода, чтобы искать слова с похожими переводами
 const float PERCENT_FORGOT_INSERT_QUEUE = 0.3f;  // ѕроцент от длины очереди неизученных слов куда вставим забытое слово
-const int FAST_QUEUE_REPEAT_AFTER_N_DAYS = 2;    // ѕосле попадени€ в быструю очередь рандомного повтора, слово станет доступным через это число суток
+const int REPEAT_AFTER_N_DAYS = 2;    // ѕосле попадени€ в быструю очередь рандомного повтора, слово станет доступным через это число суток
 const int QUICK_ANSWER_TIME_MS = 2500;           // ¬рем€ быстрого ответа в миллисекундах
 
 const char* logFileName = "log.log";
@@ -155,7 +155,7 @@ void log_random_test_words();
 int get_word_to_repeat();
 void put_word_to_end_of_random_repeat_queue_common(WordsOnDisk::WordInfo& w);
 void put_word_to_end_of_random_repeat_queue_fast(WordsOnDisk::WordInfo& w, time_t currentTime);
-void put_word_to_end_of_random_repeat_queue_common_same_position(WordsOnDisk::WordInfo& w);
+void put_word_to_end_of_random_repeat_queue_common_same_position(WordsOnDisk::WordInfo& w, time_t currentTime);
 void set_word_as_just_hardly_learned(WordsOnDisk::WordInfo& w);
 
 //===============================================================================================
@@ -1517,7 +1517,7 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 				else
 				{
 					w.rightAnswersNum += 1;
-					put_word_to_end_of_random_repeat_queue_common_same_position(w);
+					put_word_to_end_of_random_repeat_queue_common_same_position(w, curTime);
 				}
 
 				w.rightAnswersNum = std::min(w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
@@ -1685,10 +1685,11 @@ void put_word_to_end_of_random_repeat_queue_common(WordsOnDisk::WordInfo& w)
 // 
 //===============================================================================================
 
-void put_word_to_end_of_random_repeat_queue_common_same_position(WordsOnDisk::WordInfo& w)
+void put_word_to_end_of_random_repeat_queue_common_same_position(WordsOnDisk::WordInfo& w, time_t currentTime)
 {
 	int keepWordsToTest = w.wordsToTest;
 	put_word_to_end_of_random_repeat_queue_common(w);
+	w.cantRandomTestedBefore = currentTime + int(REPEAT_AFTER_N_DAYS * SECONDS_IN_DAY);;
 
 	if (keepWordsToTest == 0)
 		return;
@@ -1712,7 +1713,7 @@ void put_word_to_end_of_random_repeat_queue_fast(WordsOnDisk::WordInfo& w, time_
 	w.randomTestIncID = calc_max_randomTestIncID(true) + 1;
 	w.isInFastRandomQueue = true;
 	w.isNeedSkipOneRandomLoop = false;
-	w.cantRandomTestedBefore = currentTime + int(FAST_QUEUE_REPEAT_AFTER_N_DAYS * SECONDS_IN_DAY);;
+	w.cantRandomTestedBefore = currentTime + int(REPEAT_AFTER_N_DAYS * SECONDS_IN_DAY);;
 	w.wordsToTest = 0;
 }
 
