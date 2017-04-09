@@ -729,10 +729,10 @@ log_random_test_words();
 	}
 	printf("Выучено слов: %d, из них выучено хорошо : %d ", wordsLearnedTotal, wordsLearnedGood);
 
-	int totalToRandomRepeat = 0;
-	int middleQueued = 0;
-	calc_words_for_random_repeat(&totalToRandomRepeat, &middleQueued);
-	printf("  внеочередные для рандомного повтора: %d ", middleQueued);
+	int mainQueueLen = 0;
+	int fastQueueLen = 0;
+	calc_words_for_random_repeat(&mainQueueLen, &fastQueueLen);
+	printf("  Рандомный повтор: Основн=%d, Быстрая=%d ", mainQueueLen, fastQueueLen);
 
 	printf("\n");
 	printf("\n");
@@ -1568,26 +1568,9 @@ int calc_max_randomTestIncID(bool isFromFastQueue)
 // 
 //===============================================================================================
 
-void calc_words_for_random_repeat(int* totalToRandomRepeat, int* middleQueued)
-{
-	*totalToRandomRepeat = 0;
-	*middleQueued = 0;
-
-	for (const auto& w: wordsOnDisk._words)
-	{
-		if (w.canRandomTested(curTime))
-		{
-			++(*totalToRandomRepeat);
-		}
-	}
-}
-
-//===============================================================================================
-// 
-//===============================================================================================
-
 void fill_indices_of_random_repeat_words(std::vector<int> &indicesOfWords, bool isFromFastQueue)
 {
+	indicesOfWords.clear();
 	for (int i = 0; i < wordsOnDisk._words.size(); ++i)
 	{
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
@@ -1598,6 +1581,20 @@ void fill_indices_of_random_repeat_words(std::vector<int> &indicesOfWords, bool 
 
 	std::sort(indicesOfWords.begin(), indicesOfWords.end(), [](int i, int j) { 
 		return wordsOnDisk._words[i].randomTestIncID < wordsOnDisk._words[j].randomTestIncID; });
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+void calc_words_for_random_repeat(int* mainQueueLen, int* fastQueueLen)
+{
+	std::vector<int> indicesOfWords;
+	fill_indices_of_random_repeat_words(indicesOfWords, false);
+	*mainQueueLen = indicesOfWords.size();
+
+	fill_indices_of_random_repeat_words(indicesOfWords, true);
+	*fastQueueLen = indicesOfWords.size();
 }
 
 //===============================================================================================
@@ -1702,7 +1699,7 @@ void put_word_to_end_of_random_repeat_queue_common_same_position(WordsOnDisk::Wo
 	int index = std::min(keepWordsToTest, int(indicesOfWordsCommon.size()-1));
 	
 	WordsOnDisk::WordInfo& w2 = wordsOnDisk._words[indicesOfWordsCommon[index]];
-log("same: index=%d, w2.randomTestIncID=%d", index, w2.randomTestIncID);
+log("same: index=%d, w2.randomTestIncID=%d\n", index, w2.randomTestIncID);
 	w.randomTestIncID = w2.randomTestIncID;
 }
 
@@ -1761,7 +1758,7 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 			clear_screen();
 			printf("\n\n%s\n", w.word.c_str());
 			print_buttons_hints(w.translation, true);
-			printf("\n  Осталось: %d\n", wordsToRepeatNum - i - 1);
+			printf("\n  Осталось: %d, Быстрый ответ = %d\n", wordsToRepeatNum - i - 1, int(isQuickAnswer));
 			CloseTranslationWordsManager ctwm(wordToRepeatIndex);
 			ctwm.print_close_words_by_translation();
 			print_close_words_user_selected(wordToRepeatIndex);
