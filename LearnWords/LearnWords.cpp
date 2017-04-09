@@ -1509,16 +1509,14 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 				return;
 			if (c == 72)  // Стрелка вверх
 			{
+				put_word_to_end_of_random_repeat_queue_common(w);
 				if (isQuickAnswer)
 				{
+					w.isNeedSkipOneRandomLoop = true;
 					w.rightAnswersNum += 2;
-					put_word_to_end_of_random_repeat_queue_common(w);
 				}
 				else
-				{
 					w.rightAnswersNum += 1;
-					put_word_to_end_of_random_repeat_queue_common_same_position(w, curTime);
-				}
 
 				w.rightAnswersNum = std::min(w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
 				wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
@@ -1685,24 +1683,24 @@ void put_word_to_end_of_random_repeat_queue_common(WordsOnDisk::WordInfo& w)
 // 
 //===============================================================================================
 
-void put_word_to_end_of_random_repeat_queue_common_same_position(WordsOnDisk::WordInfo& w, time_t currentTime)
-{
-	int keepWordsToTest = w.wordsToTest;
-	put_word_to_end_of_random_repeat_queue_common(w);
-	w.cantRandomTestedBefore = currentTime + int(REPEAT_AFTER_N_DAYS * SECONDS_IN_DAY);;
-
-	if (keepWordsToTest == 0)
-		return;
-
-	std::vector<int> indicesOfWordsCommon;   // Индексы подходящих для проверки слов из общей очереди
-	fill_indices_of_random_repeat_words(indicesOfWordsCommon, false);  // Заполним indicesOfWordsCommon
-	
-	int index = std::min(keepWordsToTest, int(indicesOfWordsCommon.size()-1));
-	
-	WordsOnDisk::WordInfo& w2 = wordsOnDisk._words[indicesOfWordsCommon[index]];
-log("same: index=%d, w2.randomTestIncID=%d\n", index, w2.randomTestIncID);
-	w.randomTestIncID = w2.randomTestIncID;
-}
+//void put_word_to_end_of_random_repeat_queue_common_same_position(WordsOnDisk::WordInfo& w, time_t currentTime)
+//{
+//	int keepWordsToTest = w.wordsToTest;
+//	put_word_to_end_of_random_repeat_queue_common(w);
+//	w.cantRandomTestedBefore = currentTime + int(REPEAT_AFTER_N_DAYS * SECONDS_IN_DAY);;
+//
+//	if (keepWordsToTest == 0)
+//		return;
+//
+//	std::vector<int> indicesOfWordsCommon;   // Индексы подходящих для проверки слов из общей очереди
+//	fill_indices_of_random_repeat_words(indicesOfWordsCommon, false);  // Заполним indicesOfWordsCommon
+//	
+//	int index = std::min(keepWordsToTest, int(indicesOfWordsCommon.size()-1));
+//	
+//	WordsOnDisk::WordInfo& w2 = wordsOnDisk._words[indicesOfWordsCommon[index]];
+//log("same: index=%d, w2.randomTestIncID=%d\n", index, w2.randomTestIncID);
+//	w.randomTestIncID = w2.randomTestIncID;
+//}
 
 //===============================================================================================
 // 
@@ -1801,39 +1799,39 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 // заполнить поле wordsToTest и сохранить на диск
 //===============================================================================================
 
-void process_words_became_unreachable_for_random_repeat(time_t currentTime)
-{
-	std::vector<int> indicesOfWordsCommon;   // Индексы подходящих для проверки слов из общей очереди
-
-	bool needToSave = false;
-	for (int i = 0; i < wordsOnDisk._words.size(); ++i)
-	{
-		WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
-
-		if (w.isInFastRandomQueue == false &&
-			w.wordsToTest == 0 &&
-			w.cantRandomTestedAfter != 0 &&
-			currentTime > w.cantRandomTestedAfter)
-		{
-			if (indicesOfWordsCommon.size() == 0)
-				fill_indices_of_random_repeat_words(indicesOfWordsCommon, false);  // Заполним indicesOfWordsCommon
-
-			int i2 = 0;                                                            // Посчитаем на какой позиции наше слово (сколько слов перед ним для показа)
-			for (i2 = 0; i2 < indicesOfWordsCommon.size(); ++i2)
-			{
-				WordsOnDisk::WordInfo& w2 = wordsOnDisk._words[indicesOfWordsCommon[i2]];
-				if (w2.randomTestIncID >= w.randomTestIncID)
-					break;
-			}
-
-			w.wordsToTest = i2;
-			needToSave = true;
-		}
-	}
-
-	if (needToSave)
-		wordsOnDisk.save_to_file();
-}
+//void process_words_became_unreachable_for_random_repeat(time_t currentTime)
+//{
+//	std::vector<int> indicesOfWordsCommon;   // Индексы подходящих для проверки слов из общей очереди
+//
+//	bool needToSave = false;
+//	for (int i = 0; i < wordsOnDisk._words.size(); ++i)
+//	{
+//		WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
+//
+//		if (w.isInFastRandomQueue == false &&
+//			w.wordsToTest == 0 &&
+//			w.cantRandomTestedAfter != 0 &&
+//			currentTime > w.cantRandomTestedAfter)
+//		{
+//			if (indicesOfWordsCommon.size() == 0)
+//				fill_indices_of_random_repeat_words(indicesOfWordsCommon, false);  // Заполним indicesOfWordsCommon
+//
+//			int i2 = 0;                                                            // Посчитаем на какой позиции наше слово (сколько слов перед ним для показа)
+//			for (i2 = 0; i2 < indicesOfWordsCommon.size(); ++i2)
+//			{
+//				WordsOnDisk::WordInfo& w2 = wordsOnDisk._words[indicesOfWordsCommon[i2]];
+//				if (w2.randomTestIncID >= w.randomTestIncID)
+//					break;
+//			}
+//
+//			w.wordsToTest = i2;
+//			needToSave = true;
+//		}
+//	}
+//
+//	if (needToSave)
+//		wordsOnDisk.save_to_file();
+//}
 
 //===============================================================================================
 // 
@@ -1863,7 +1861,7 @@ int main(int argc, char* argv[])
 		clear_screen();
 		curTime = time(NULL);   // Текущее время обновляется один раз перед показом главного меню, чтобы число слов для повтора в меню 
 		                        // и последующем запуске режима повтора (в нём используется запомненный здесь curTime) было одинаковым .
-		process_words_became_unreachable_for_random_repeat(curTime);
+//		process_words_became_unreachable_for_random_repeat(curTime);
 		int keyPressed = main_menu_choose_mode();
 		switch (keyPressed)
 		{
