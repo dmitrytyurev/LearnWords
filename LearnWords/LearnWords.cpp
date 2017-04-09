@@ -1375,7 +1375,7 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 			clear_screen();
 			printf("\n\n%s\n", w.word.c_str());
 			print_buttons_hints(w.translation, true);
-			printf("\n  Осталось: %d\n", wordsToRepeat.size() - i - 1);
+			printf("\n  Осталось: %d, Быстрый ответ = %d\n", wordsToRepeat.size() - i - 1, int(isQuickAnswer));
 			CloseTranslationWordsManager ctwm(wordsToRepeat[i]);
 			ctwm.print_close_words_by_translation();
 
