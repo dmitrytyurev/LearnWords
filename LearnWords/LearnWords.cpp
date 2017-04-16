@@ -501,8 +501,8 @@ void WordsOnDisk::fill_date_of_repeate_and_save(WordsOnDisk::WordInfo& w, time_t
 //printf("%d %f %f %f %d\n", w.rightAnswersNum, min, max, randDays, int(randDays * SECONDS_IN_DAY));
 //getch_filtered();
 	int secondsPlusCurTime  = int(randDays * SECONDS_IN_DAY);
-	w.dateOfRepeat          = currentTime + secondsPlusCurTime;
-	w.cantRandomTestedAfter = currentTime + secondsPlusCurTime / 2;
+	w.dateOfRepeat          = (int)currentTime + secondsPlusCurTime;
+	w.cantRandomTestedAfter = (int)currentTime + secondsPlusCurTime / 2;
 //log("cantRandomTestedAfter = %d, curTime = %ll, secondsPlusCurTime = %d\n", w.cantRandomTestedAfter, currentTime, secondsPlusCurTime);
 	save_to_file();
 }
@@ -1601,7 +1601,7 @@ void put_word_to_end_of_random_repeat_queue_fast(WordsOnDisk::WordInfo& w, time_
 	w.randomTestIncID = calc_max_randomTestIncID(true) + 1;
 	w.isInFastRandomQueue = true;
 	w.isNeedSkipOneRandomLoop = false;
-	w.cantRandomTestedBefore = currentTime + int(REPEAT_AFTER_N_DAYS * SECONDS_IN_DAY);;
+	w.cantRandomTestedBefore = (int)currentTime + int(REPEAT_AFTER_N_DAYS * SECONDS_IN_DAY);;
 	w.wordsToTest = 0;
 }
 
@@ -1730,7 +1730,7 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 int main(int argc, char* argv[])
 {
 	std::srand(unsigned(std::time(0)));
-	srand(time(NULL));
+	srand((int)time(NULL));
 
 	if (argc != 2)
 	{
