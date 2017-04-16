@@ -895,7 +895,7 @@ void CloseTranslationWordsManager::collect_close_words_to(std::vector<CloseWordF
 		return;
 	int cutLen = std::max(MIN_CLOSE_WORD_LEN, length - 4);
 
-	for (int i = 0; i < wordsOnDisk._words.size(); ++i)
+	for (int i = 0; i < (int)wordsOnDisk._words.size(); ++i)
 	{
 		if (i == srcWordIndex)
 			continue;
@@ -941,7 +941,7 @@ void CloseTranslationWordsManager::print_close_words_by_translation()
 	for (const auto& word: words)
 		collect_close_words_to(closeWordsFound, word, srcWordIndex, w.word);
 
-	for (int i = 0; i<closeWordsFound.size(); ++i)
+	for (int i = 0; i<(int)closeWordsFound.size(); ++i)
 		printf("%d. %s: %s\n", i+1, closeWordsFound[i].engWord.c_str(), closeWordsFound[i].translation.c_str());
 }
 
@@ -951,7 +951,7 @@ void CloseTranslationWordsManager::print_close_words_by_translation()
 
 void CloseTranslationWordsManager::add_exclusion(int n)
 {
-	if (n >= closeWordsFound.size())
+	if (n >= (int)closeWordsFound.size())
 		return;
 	const WordsOnDisk::WordInfo& w = wordsOnDisk._words[srcWordIndex];
 
@@ -967,7 +967,7 @@ void CloseTranslationWordsManager::add_exclusion(int n)
 
 void CloseTranslationWordsManager::add_close_eng_word_to_translation(int n)
 {
-	if (n >= closeWordsFound.size())
+	if (n >= (int)closeWordsFound.size())
 		return;
 	WordsOnDisk::WordInfo& w = wordsOnDisk._words[srcWordIndex];
 	const std::string& wr = w.translation;
@@ -1008,7 +1008,7 @@ void CloseTranslationWordsManager::process_user_input(char c)
 	std::vector<char> codesToAdd = {49, 50, 51, 52, 53, 54, 55, 56, 57};
 	std::vector<char> codesToExclude = {33, 64, 35, 36, 37, 94, 38, 42, 40};
 
-	for (int i=0; i<codesToAdd.size(); ++i)
+	for (int i=0; i<(int)codesToAdd.size(); ++i)
 		if (codesToAdd[i] == c)
 		{
 			add_close_eng_word_to_translation(i);
@@ -1052,7 +1052,7 @@ void learning_words()
 
 	if (additionalWordsToLearn > 0)
 	{
-		for (int i = 0; i < wordsOnDisk._words.size(); ++i)
+		for (int i = 0; i < (int)wordsOnDisk._words.size(); ++i)
 		{
 			const WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
 			if (w.rightAnswersNum == 0)
@@ -1274,7 +1274,7 @@ void repeating_words_just_learnded_and_forgotten()
 
 	// Выбрать слова для проверки (недавно изученные и забытые)
 
-	for (int i = 0; i < wordsOnDisk._words.size(); ++i)
+	for (int i = 0; i < (int)wordsOnDisk._words.size(); ++i)
 	{
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
 		if (w.isWordJustLearnedOrForgotten(curTime))
@@ -1287,7 +1287,7 @@ void repeating_words_just_learnded_and_forgotten()
 	// Главный цикл проверки слов
 
 	std::random_shuffle(wordsToRepeat.begin(), wordsToRepeat.end());
-	for (int i = 0; i < wordsToRepeat.size(); ++i)
+	for (int i = 0; i < (int)wordsToRepeat.size(); ++i)
 	{
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[wordsToRepeat[i]];
 
@@ -1306,7 +1306,7 @@ void repeating_words_just_learnded_and_forgotten()
 			clear_screen();
 			printf("\n\n%s\n", w.word.c_str());
 			print_buttons_hints(w.translation, false);
-			printf("\n  Осталось: %d\n", wordsToRepeat.size() - i - 1);
+			printf("\n  Осталось: %d\n", (int)wordsToRepeat.size() - i - 1);
 			CloseTranslationWordsManager ctwm(wordsToRepeat[i]);
 			ctwm.print_close_words_by_translation();
 
@@ -1345,7 +1345,7 @@ void checking_words_by_time()
 
 	// Выбрать слова для проверки, для которых подошло время проверки
 
-	for (int i = 0; i < wordsOnDisk._words.size(); ++i)
+	for (int i = 0; i < (int)wordsOnDisk._words.size(); ++i)
 	{
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
 		if (w.dateOfRepeat != 0 && w.dateOfRepeat < curTime)
@@ -1357,7 +1357,7 @@ void checking_words_by_time()
 	// Главный цикл проверки слов
 
 	std::random_shuffle(wordsToRepeat.begin(), wordsToRepeat.end());
-	for (int i = 0; i < wordsToRepeat.size(); ++i)
+	for (int i = 0; i < (int)wordsToRepeat.size(); ++i)
 	{
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[wordsToRepeat[i]];
 
@@ -1381,7 +1381,7 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 			clear_screen();
 			printf("\n\n%s\n", w.word.c_str());
 			print_buttons_hints(w.translation, true);
-			printf("\n  Осталось: %d, Быстрый ответ = %d\n", wordsToRepeat.size() - i - 1, int(isQuickAnswer));
+			printf("\n  Осталось: %d, Быстрый ответ = %d\n", (int)wordsToRepeat.size() - i - 1, int(isQuickAnswer));
 			CloseTranslationWordsManager ctwm(wordsToRepeat[i]);
 			ctwm.print_close_words_by_translation();
 
@@ -1433,7 +1433,7 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 int calc_max_randomTestIncID(bool isFromFastQueue)
 {
 	int max = -1;
-	for (int i = 0; i < wordsOnDisk._words.size(); ++i)
+	for (int i = 0; i < (int)wordsOnDisk._words.size(); ++i)
 	{
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
 
@@ -1451,7 +1451,7 @@ int calc_max_randomTestIncID(bool isFromFastQueue)
 void fill_indices_of_random_repeat_words(std::vector<int> &indicesOfWords, bool isFromFastQueue)
 {
 	indicesOfWords.clear();
-	for (int i = 0; i < wordsOnDisk._words.size(); ++i)
+	for (int i = 0; i < (int)wordsOnDisk._words.size(); ++i)
 	{
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
 
