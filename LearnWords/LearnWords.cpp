@@ -559,13 +559,19 @@ log_random_test_words();
 	if (prevWordsLearnedGood > 0)
 		deltaWordsLearnedGood = wordsLearnedGood - prevWordsLearnedGood;
 	prevWordsLearnedGood = wordsLearnedGood;
-	printf("Выучено слов: %d, из них хорошо: %d (delta=%d)", wordsLearnedTotal, wordsLearnedGood, deltaWordsLearnedGood);
+	printf("Выучено слов: %d, из них хорошо: %d (%d)", wordsLearnedTotal, wordsLearnedGood, deltaWordsLearnedGood);
 
 	int mainQueueLen = 0;
 	int mainQueueSkipLoopCount = 0;
 	int fastQueueLen = 0;
 	calc_words_for_random_repeat(&mainQueueLen, &mainQueueSkipLoopCount, &fastQueueLen);
-	printf("  Рандомный повтор: Основн=%d (из них skip=%d), Быстрая=%d ", mainQueueLen, mainQueueSkipLoopCount, fastQueueLen);
+	
+	static int prevSkipLoopCount;
+	int deltaSkipLoopCount = 0;
+	if (prevSkipLoopCount > 0)
+		deltaSkipLoopCount = mainQueueSkipLoopCount - prevSkipLoopCount;
+	prevSkipLoopCount = mainQueueSkipLoopCount;
+	printf("  Рандомный повтор: Основн=%d (из них skip=%d (%d)), Быстрая=%d ", mainQueueLen, mainQueueSkipLoopCount, deltaSkipLoopCount, fastQueueLen);
 
 	printf("\n");
 	printf("\n");
