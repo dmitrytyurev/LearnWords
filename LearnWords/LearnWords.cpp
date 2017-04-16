@@ -294,8 +294,8 @@ void WordsOnDisk::load_from_file(const char* fullFileName)
 	}
 	file.seekg(0, std::ios::beg);
 
-	std::vector<char> buffer(size + 1);
-	buffer[size] = 0;
+	std::vector<char> buffer((int)size + 1);
+	buffer[(int)size] = 0;
 	if (!file.read(buffer.data(), size))
 	{
 		printf("Error reading file %s\n", fullFileName);
@@ -387,7 +387,7 @@ void WordsOnDisk::load_from_file(const char* fullFileName)
 			}
 
 			// ---------
-			wi.isInFastRandomQueue = (bool) load_int_from_array(buffer, &parseIndex);
+			wi.isInFastRandomQueue = !!load_int_from_array(buffer, &parseIndex);
 			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
 				++parseIndex;
 			if (buffer[parseIndex] == 0 || buffer[parseIndex] == 0xd)
@@ -397,7 +397,7 @@ void WordsOnDisk::load_from_file(const char* fullFileName)
 			}
 
 			// ---------
-			wi.isNeedSkipOneRandomLoop = (bool) load_int_from_array(buffer, &parseIndex);
+			wi.isNeedSkipOneRandomLoop = !!load_int_from_array(buffer, &parseIndex);
 			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
 				++parseIndex;
 			if (buffer[parseIndex] == 0 || buffer[parseIndex] == 0xd)
