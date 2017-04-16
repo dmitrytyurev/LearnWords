@@ -1729,6 +1729,7 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 
 int main(int argc, char* argv[])
 {
+	setlocale(LC_ALL, "Russian");
 	std::srand(unsigned(std::time(0)));
 	srand((int)time(NULL));
 
@@ -1745,7 +1746,6 @@ int main(int argc, char* argv[])
 //wordsOnDisk.save_to_file();
 //return 0;
 
-	setlocale(LC_ALL, "Russian");
 	while (true)
 	{
 		clear_screen();
