@@ -155,7 +155,6 @@ void log_random_test_words();
 int get_word_to_repeat();
 void put_word_to_end_of_random_repeat_queue_common(WordsOnDisk::WordInfo& w);
 void put_word_to_end_of_random_repeat_queue_fast(WordsOnDisk::WordInfo& w, time_t currentTime);
-void put_word_to_end_of_random_repeat_queue_common_same_position(WordsOnDisk::WordInfo& w, time_t currentTime);
 void set_word_as_just_hardly_learned(WordsOnDisk::WordInfo& w);
 
 //===============================================================================================
@@ -1568,29 +1567,6 @@ void put_word_to_end_of_random_repeat_queue_common(WordsOnDisk::WordInfo& w)
 // 
 //===============================================================================================
 
-//void put_word_to_end_of_random_repeat_queue_common_same_position(WordsOnDisk::WordInfo& w, time_t currentTime)
-//{
-//	int keepWordsToTest = w.wordsToTest;
-//	put_word_to_end_of_random_repeat_queue_common(w);
-//	w.cantRandomTestedBefore = currentTime + int(REPEAT_AFTER_N_DAYS * SECONDS_IN_DAY);;
-//
-//	if (keepWordsToTest == 0)
-//		return;
-//
-//	std::vector<int> indicesOfWordsCommon;   // »ндексы подход€щих дл€ проверки слов из общей очереди
-//	fill_indices_of_random_repeat_words(indicesOfWordsCommon, false);  // «аполним indicesOfWordsCommon
-//	
-//	int index = std::min(keepWordsToTest, int(indicesOfWordsCommon.size()-1));
-//	
-//	WordsOnDisk::WordInfo& w2 = wordsOnDisk._words[indicesOfWordsCommon[index]];
-//log("same: index=%d, w2.randomTestIncID=%d\n", index, w2.randomTestIncID);
-//	w.randomTestIncID = w2.randomTestIncID;
-//}
-
-//===============================================================================================
-// 
-//===============================================================================================
-
 void put_word_to_end_of_random_repeat_queue_fast(WordsOnDisk::WordInfo& w, time_t currentTime)
 {
 	w.randomTestIncID = calc_max_randomTestIncID(true) + 1;
@@ -1679,44 +1655,6 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 	}
 }
 
-//===============================================================================================
-// ” слов, которые вошли в зону недоступности дл€ рандомного повтора по времени cantRandomTestedAfter
-// заполнить поле wordsToTest и сохранить на диск
-//===============================================================================================
-
-//void process_words_became_unreachable_for_random_repeat(time_t currentTime)
-//{
-//	std::vector<int> indicesOfWordsCommon;   // »ндексы подход€щих дл€ проверки слов из общей очереди
-//
-//	bool needToSave = false;
-//	for (int i = 0; i < wordsOnDisk._words.size(); ++i)
-//	{
-//		WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
-//
-//		if (w.isInFastRandomQueue == false &&
-//			w.wordsToTest == 0 &&
-//			w.cantRandomTestedAfter != 0 &&
-//			currentTime > w.cantRandomTestedAfter)
-//		{
-//			if (indicesOfWordsCommon.size() == 0)
-//				fill_indices_of_random_repeat_words(indicesOfWordsCommon, false);  // «аполним indicesOfWordsCommon
-//
-//			int i2 = 0;                                                            // ѕосчитаем на какой позиции наше слово (сколько слов перед ним дл€ показа)
-//			for (i2 = 0; i2 < indicesOfWordsCommon.size(); ++i2)
-//			{
-//				WordsOnDisk::WordInfo& w2 = wordsOnDisk._words[indicesOfWordsCommon[i2]];
-//				if (w2.randomTestIncID >= w.randomTestIncID)
-//					break;
-//			}
-//
-//			w.wordsToTest = i2;
-//			needToSave = true;
-//		}
-//	}
-//
-//	if (needToSave)
-//		wordsOnDisk.save_to_file();
-//}
 
 //===============================================================================================
 // 
