@@ -1260,7 +1260,7 @@ void repeating_words_just_learnded_and_forgotten()
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[wordsToRepeat[i]];
 
 		clear_screen();
-		printf("\n\n%s\n", w.word.c_str());
+		printf("\n\n===============================\n %s\n===============================\n", w.word.c_str());
 		char c = 0;
 		do
 		{
@@ -1272,7 +1272,7 @@ void repeating_words_just_learnded_and_forgotten()
 		while (true)
 		{
 			clear_screen();
-			printf("\n\n%s\n", w.word.c_str());
+			printf("\n\n===============================\n %s\n===============================\n", w.word.c_str());
 			print_buttons_hints(w.translation, false);
 			printf("\n  Осталось: %d\n", (int)wordsToRepeat.size() - i - 1);
 			CloseTranslationWordsManager ctwm(wordsToRepeat[i]);
@@ -1330,7 +1330,7 @@ void checking_words_by_time()
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[wordsToRepeat[i]];
 
 		clear_screen();
-		printf("\n\n%s\n", w.word.c_str());
+		printf("\n\n===============================\n %s\n===============================\n", w.word.c_str());
 		auto t_start = std::chrono::high_resolution_clock::now();
 log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk._fullFileName.c_str(), get_time_in_text(curTime));
 		char c = 0;
@@ -1347,7 +1347,7 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 		while (true)
 		{
 			clear_screen();
-			printf("\n\n%s\n", w.word.c_str());
+			printf("\n\n===============================\n %s\n===============================\n", w.word.c_str());
 			print_buttons_hints(w.translation, true);
 			printf("\n  Осталось: %d, Быстрый ответ = %d\n", (int)wordsToRepeat.size() - i - 1, int(isQuickAnswer));
 			CloseTranslationWordsManager ctwm(wordsToRepeat[i]);
@@ -1571,7 +1571,7 @@ void repeating_random_words()
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[wordToRepeatIndex];
 
 		clear_screen();
-		printf("\n\n%s\n", w.word.c_str());
+		printf("\n\n===============================\n %s\n===============================\n", w.word.c_str());
 		auto t_start = std::chrono::high_resolution_clock::now();
 log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._fullFileName.c_str(), get_time_in_text(curTime));
 		char c = 0;
@@ -1588,7 +1588,7 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 		while (true)
 		{
 			clear_screen();
-			printf("\n\n%s\n", w.word.c_str());
+			printf("\n\n===============================\n %s\n===============================\n", w.word.c_str());
 			print_buttons_hints(w.translation, true);
 			printf("\n  Осталось: %d, Быстрый ответ = %d\n", wordsToRepeatNum - i - 1, int(isQuickAnswer));
 			CloseTranslationWordsManager ctwm(wordToRepeatIndex);
