@@ -58,7 +58,6 @@ struct WordsOnDisk
 			cantRandomTestedAfter = 0; 
 			randomTestIncID = 0; 
 			cantRandomTestedBefore = 0; 
-			wordsToTest = 0;
 			isInFastRandomQueue = false;
 			isNeedSkipOneRandomLoop = false;
 		}
@@ -97,11 +96,6 @@ struct WordsOnDisk
 		bool isInFastRandomQueue;  // Находится ли слово в быстрой очереди рандомного повтора
 		bool isNeedSkipOneRandomLoop; // Нужно ли пропустить один круг рандомного повтора слова
 		int  cantRandomTestedBefore;  // Если !=0, то до этого времени нельзя использовать слово в рандомном тесте, поскольку мы недавно его повторяли и нужно выждать немного перед ещё одним повтором
-		int  wordsToTest;             // Как только до очередного check_word_by_time остаётся меньше половины времени, слово становится недоступно для рандомного повтора. В этот момент
-		                              // запоминаем сколько слов было перед данным словом в очереди рандомного повтора. А в тот момент, когда слово снова станет доступно для рандомного
-		                              // повтора, мы изменим randomTestIncID, чтобы перед словом снова стало столько же слов впереди.
-
-		std::string closeWords;    // Английские слова через ';', которые нужно показать вместе с этим словом (например, похожие по написанию, которые мы спутали с данным словом)
 	};
 
 	struct CompareExcludePair
@@ -407,24 +401,8 @@ void WordsOnDisk::load_from_file(const char* fullFileName)
 
 			// ---------
 			wi.cantRandomTestedBefore = load_int_from_array(buffer, &parseIndex);
-			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
+			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd)
 				++parseIndex;
-			if (buffer[parseIndex] == 0 || buffer[parseIndex] == 0xd)
-			{
-				printf("Sintax error in word %s", wi.word.c_str());
-				exit(1);
-			}
-
-			// ---------
-			wi.wordsToTest = load_int_from_array(buffer, &parseIndex);
-			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && buffer[parseIndex] != '"')
-				++parseIndex;
-			if (buffer[parseIndex] == '"')
-			{
-				wi.closeWords = load_string_from_array(buffer, &parseIndex);
-				while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd)
-					++parseIndex;
-			}
 		}
 
 		// Занести WordInfo в вектор
@@ -464,7 +442,7 @@ void WordsOnDisk::save_to_file()
 			fprintf(f, "\"%s\" \"%s\"\n", e.word.c_str(), e.translation.c_str());
 		else
 		{
-			fprintf(f, "\"%s\" \"%s\" %d %d %d %d %d %d %d %d", 
+			fprintf(f, "\"%s\" \"%s\" %d %d %d %d %d %d %d", 
 				e.word.c_str(),
 				e.translation.c_str(),
 				e.rightAnswersNum,
@@ -473,11 +451,7 @@ void WordsOnDisk::save_to_file()
 				e.cantRandomTestedAfter,
 				int(e.isInFastRandomQueue),
 				int(e.isNeedSkipOneRandomLoop),
-				e.cantRandomTestedBefore,
-				e.wordsToTest);
-
-			if (e.closeWords.length())
-				fprintf(f, " \"%s\"", e.closeWords.c_str());
+				e.cantRandomTestedBefore);
 
 			fprintf(f, "\n");
 		}
@@ -523,11 +497,11 @@ void print_buttons_hints(const std::string& str, bool needRightKeyHint)
 
 void print_close_words_user_selected(int wordIndex)
 {
-	const std::string& closeWord = wordsOnDisk._words[wordIndex].closeWords;
+	//const std::string& closeWord = wordsOnDisk._words[wordIndex].closeWords;   FIXME!!! Сделать чтение отдельных пар перепутанных значений, после этого починить эту функцию
 
-	for (const auto& curWord : wordsOnDisk._words)
-		if (curWord.word == closeWord)
-			printf("%s %s\n", curWord.word.c_str(), curWord.translation.c_str());
+	//for (const auto& curWord : wordsOnDisk._words)
+	//	if (curWord.word == closeWord)
+	//		printf("%s %s\n", curWord.word.c_str(), curWord.translation.c_str());
 }
 
 //===============================================================================================
@@ -1560,7 +1534,6 @@ void put_word_to_end_of_random_repeat_queue_common(WordsOnDisk::WordInfo& w)
 	w.isInFastRandomQueue = false;
 	w.isNeedSkipOneRandomLoop = false;
 	w.cantRandomTestedBefore = 0;
-	w.wordsToTest = 0;
 }
 
 //===============================================================================================
@@ -1573,7 +1546,6 @@ void put_word_to_end_of_random_repeat_queue_fast(WordsOnDisk::WordInfo& w, time_
 	w.isInFastRandomQueue = true;
 	w.isNeedSkipOneRandomLoop = false;
 	w.cantRandomTestedBefore = (int)currentTime + int(REPEAT_AFTER_N_DAYS * SECONDS_IN_DAY);;
-	w.wordsToTest = 0;
 }
 
 //===============================================================================================
