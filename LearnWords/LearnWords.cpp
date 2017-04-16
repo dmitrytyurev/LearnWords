@@ -199,6 +199,22 @@ char getch_filtered()  // Игнорирует код -32 (встречается, например, у стрелок)
 // 
 //===============================================================================================
 
+void _cdecl exit_msg(char *text, ...)
+{
+	static char tmpStr[1024];
+	va_list args;
+	va_start(args, text);
+	vsprintf_s(tmpStr, sizeof(tmpStr), text, args);
+	va_end(args);
+
+	printf("%s", tmpStr);
+	exit(1);
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
+
 void _cdecl log(char *text, ...)
 {
 	static char tmpStr[1024];
@@ -210,13 +226,11 @@ void _cdecl log(char *text, ...)
 	FILE* f = NULL;
 	fopen_s(&f, logFileName, "at");
 	if (f == NULL)
-	{
-		printf("Can't  create file %s\n", logFileName);
-		exit(1);
-	}
+		exit_msg("Can't  create file %s\n", logFileName);
 	fprintf(f, "%s", tmpStr);
 	fclose(f);
 }
+
 
 //===============================================================================================
 // 
@@ -281,19 +295,13 @@ void WordsOnDisk::load_from_file(const char* fullFileName)
 	std::ifstream file(fullFileName, std::ios::binary | std::ios::ate);
 	std::streamsize size = file.tellg();
 	if (size == -1)
-	{
-		printf("Error opening file %s\n", fullFileName);
-		exit(1);
-	}
+		exit_msg("Error opening file %s\n", fullFileName);
 	file.seekg(0, std::ios::beg);
 
 	std::vector<char> buffer((int)size + 1);
 	buffer[(int)size] = 0;
 	if (!file.read(buffer.data(), size))
-	{
-		printf("Error reading file %s\n", fullFileName);
-		exit(1);
-	}
+		exit_msg("Error reading file %s\n", fullFileName);
 
 	int parseIndex = 0;
 
@@ -304,10 +312,7 @@ void WordsOnDisk::load_from_file(const char* fullFileName)
 
 		cep.word1 = load_string_from_array(buffer, &parseIndex);
 		if (cep.word1.length() == 0)         // При поиске начала строки был встречен конец файла (например, файл заканчивается пустой строкой)
-		{
-			printf("Sintax error in word %s", cep.word1.c_str());
-			exit(1);
-		}
+			exit_msg("Sintax error in word %s", cep.word1.c_str());
 
 		if (cep.word1 == "Main block")
 			break;
@@ -321,10 +326,7 @@ void WordsOnDisk::load_from_file(const char* fullFileName)
 			++parseIndex;
 
 		if (buffer[parseIndex] == 0)
-		{
-			printf("Sintax error in word");
-			exit(1);
-		}
+			exit_msg("Sintax error in word");
 	}
 
 	// Читаем основной блок слов
@@ -346,58 +348,40 @@ void WordsOnDisk::load_from_file(const char* fullFileName)
 			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
 				++parseIndex;
 			if (buffer[parseIndex] == 0 || buffer[parseIndex] == 0xd)
-			{
-				printf("Sintax error in word %s", wi.word.c_str());
-				exit(1);
-			}
+				exit_msg("Sintax error in word %s", wi.word.c_str());
 			// ---------
 			wi.dateOfRepeat = load_int_from_array(buffer, &parseIndex);
 			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
 				++parseIndex;
 			if (buffer[parseIndex] == 0 || buffer[parseIndex] == 0xd)
-			{
-				printf("Sintax error in word %s", wi.word.c_str());
-				exit(1);
-			}
+				exit_msg("Sintax error in word %s", wi.word.c_str());
 			// ---------
 			wi.randomTestIncID = load_int_from_array(buffer, &parseIndex);
 			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
 				++parseIndex;
 			if (buffer[parseIndex] == 0 || buffer[parseIndex] == 0xd)
-			{
-				printf("Sintax error in word %s", wi.word.c_str());
-				exit(1);
-			}
+				exit_msg("Sintax error in word %s", wi.word.c_str());
 
 			// ---------
 			wi.cantRandomTestedAfter = load_int_from_array(buffer, &parseIndex);
 			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
 				++parseIndex;
 			if (buffer[parseIndex] == 0 || buffer[parseIndex] == 0xd)
-			{
-				printf("Sintax error in word %s", wi.word.c_str());
-				exit(1);
-			}
+				exit_msg("Sintax error in word %s", wi.word.c_str());
 
 			// ---------
 			wi.isInFastRandomQueue = !!load_int_from_array(buffer, &parseIndex);
 			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
 				++parseIndex;
 			if (buffer[parseIndex] == 0 || buffer[parseIndex] == 0xd)
-			{
-				printf("Sintax error in word %s", wi.word.c_str());
-				exit(1);
-			}
+				exit_msg("Sintax error in word %s", wi.word.c_str());
 
 			// ---------
 			wi.isNeedSkipOneRandomLoop = !!load_int_from_array(buffer, &parseIndex);
 			while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
 				++parseIndex;
 			if (buffer[parseIndex] == 0 || buffer[parseIndex] == 0xd)
-			{
-				printf("Sintax error in word %s", wi.word.c_str());
-				exit(1);
-			}
+				exit_msg("Sintax error in word %s", wi.word.c_str());
 
 			// ---------
 			wi.cantRandomTestedBefore = load_int_from_array(buffer, &parseIndex);
@@ -422,10 +406,7 @@ void WordsOnDisk::save_to_file()
 	FILE* f = NULL;
 	fopen_s(&f, _fullFileName.c_str(), "wt");
 	if (f == NULL)
-	{
-		printf("Can't create file %s\n", _fullFileName.c_str());
-		exit(1);
-	}
+		exit_msg("Can't create file %s\n", _fullFileName.c_str());
 
 	for (const auto& e:_compareExcludePairs)
 	{
@@ -539,10 +520,7 @@ void recalc_stats(time_t curTime, int* wordsTimeToRepeatNum, int* wordsJustLearn
 		if (w.dateOfRepeat != 0)
 		{
 			if (w.rightAnswersNum == 0)
-			{
-				printf("Semantic error\n");
-				exit(1);
-			}
+				exit_msg("Semantic error\n");
 
 			if (w.dateOfRepeat < curTime)
 				++(*wordsTimeToRepeatNum);
@@ -944,10 +922,7 @@ void CloseTranslationWordsManager::add_close_eng_word_to_translation(int n)
 	size_t pos = wr.find(closeWordsFound[n].rusWordSrc);
 
 	if (pos == std::string::npos)
-	{
-		printf("Error 86036939");
-		exit(1);
-	}
+		exit_msg("Error 86036939");
 
 	while (wr[pos] != 0 && wr[pos] != ',' && wr[pos] != '(' && wr[pos] != ';')
 		++pos;
@@ -957,10 +932,7 @@ void CloseTranslationWordsManager::add_close_eng_word_to_translation(int n)
 		while (wr[pos] != 0 && wr[pos] != ')')
 			++pos;
 		if (wr[pos] == 0)
-		{
-			printf("Sintax error 5725875");
-			exit(1);
-		}
+			exit_msg("Sintax error 5725875");
 		w.translation.insert(pos, ", " + closeWordsFound[n].engWord);
 	}
 	else                 // Списка ещё нет, создадим его
