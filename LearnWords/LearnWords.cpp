@@ -744,7 +744,6 @@ void print_masked_translation(const char* _str, int symbolsToShowNum)
 {
 	const unsigned char* str = reinterpret_cast<const unsigned char*>(_str);;
 	bool isInTranscription = false;
-	bool isInRemark        = false;
 	int  charCounterInWord = 0;
 	while (*str)
 	{
@@ -752,10 +751,6 @@ void print_masked_translation(const char* _str, int symbolsToShowNum)
 			isInTranscription = true;
 		if (*str == ']')
 			isInTranscription = false;
-		if (*str == '(')
-			isInRemark = true;
-		if (*str == ')')
-			isInRemark = false;
 		bool isInWord = false;
 		if (is_symbol(*str) && isInTranscription == false)
 		{
@@ -780,7 +775,7 @@ void print_masked_translation(const char* _str, int symbolsToShowNum)
 class CloseTranslationWordsManager  // FIXME!!! избавиться от прямого использования глобального объекта WordsOnDisk. Передавать ссылку на него в методы.
 {
 public:
-	CloseTranslationWordsManager(int wordIndex) : srcWordIndex(wordIndex) {}
+	explicit CloseTranslationWordsManager(int wordIndex) : srcWordIndex(wordIndex) {}
 	void print_close_words_by_translation();
 	void process_user_input(char c);
 
