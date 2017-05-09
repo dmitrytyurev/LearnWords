@@ -1443,7 +1443,7 @@ void log_random_test_words()
 	for (const auto& index: indicesOfWords)
 	{
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[index];
-		log("  %s %d\n", w.word.c_str(), w.randomTestIncID);
+		log("  %s %d skip=%d\n", w.word.c_str(), w.randomTestIncID, w.isNeedSkipOneRandomLoop);
 	}
 
 	indicesOfWords.clear();
