@@ -1091,7 +1091,6 @@ void learning_words()
 	// Занести слова, которые будем изучать в очередь невыученных слов
 	for (const auto& index: wordsToLearnIndices)
 	{
-		const WordsOnDisk::WordInfo& w = wordsOnDisk._words[index];
 		WordToLearn word;
 		word._index = index;
 		unlearned.push_back(word);
