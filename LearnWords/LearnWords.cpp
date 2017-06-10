@@ -19,10 +19,10 @@
 // 
 //===============================================================================================
 
-const static int MAX_RIGHT_REPEATS_GLOBAL_N = 13;
+const static int MAX_RIGHT_REPEATS_GLOBAL_N = 16;
 // !!! Если время сутки или больше, то вычитается 0.1f 
-float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1]          = { 0, 0.25f, 1,     1, 1, 3, 6,  8, 15, 25, 90,  90 , 90 , 120 }; // если пользователь привык работать в одно и то же время суток
-float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1]          = { 0, 0.25f, 1,     1, 1, 4, 7, 12, 20, 30, 100, 100, 100, 140 }; // ему так будет удобнее, иначе каждый день будет сдвиг вперёд
+float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1]          = { 0, 0.25f, 1,     1, 1, 2, 3, 3, 4, 5,  7, 10, 14, 20, 25, 35, 50 }; // если пользователь привык работать в одно и то же время суток
+float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1]          = { 0, 0.25f, 1,     1, 1, 3, 4, 4, 5, 6, 9,  12, 20, 30, 35, 45, 70 }; // ему так будет удобнее, иначе каждый день будет сдвиг вперёд
 
 const int SECONDS_IN_DAY = 3600 * 24;
 const int TIMES_TO_REPEAT_TO_LEARN = 4;  // Сколько раз при изучении показать все слова сразу с переводом, прежде чем начать показывать без перевода
@@ -37,7 +37,7 @@ const int RIGHT_ANSWERS_FALLBACK = 6;            // Номер шага, на который откат
 const int MIN_CLOSE_WORD_LEN = 5;                // Столько первых символов берётся из слов перевода, чтобы искать слова с похожими переводами
 const float PERCENT_FORGOT_INSERT_QUEUE = 0.3f;  // Процент от длины очереди неизученных слов куда вставим забытое слово
 const int REPEAT_AFTER_N_DAYS = 2;    // После попадения в быструю очередь рандомного повтора, слово станет доступным через это число суток
-const int QUICK_ANSWER_TIME_MS = 2500;           // Время быстрого ответа в миллисекундах
+const int QUICK_ANSWER_TIME_MS = 2900;           // Время быстрого ответа в миллисекундах
 
 const char* logFileName = "log.log";
 
@@ -951,10 +951,12 @@ void CloseTranslationWordsManager::add_close_eng_word_to_translation(int n)
 
 void CloseTranslationWordsManager::process_user_input(char c)
 {
-	std::vector<char> codesToAdd = {49, 50, 51, 52, 53, 54, 55, 56, 57};
-	std::vector<char> codesToExclude = {33, 64, 35, 36, 37, 94, 38, 42, 40};
+	char codesToAdd[] = {49, 50, 51, 52, 53, 54, 55, 56, 57};
+	char codesToExclude[] = {33, 64, 35, 36, 37, 94, 38, 42, 40};
 
-	for (int i=0; i<(int)codesToAdd.size(); ++i)
+	const int sizeOfArr = sizeof(codesToAdd) / sizeof(codesToAdd[0]);
+
+	for (int i=0; i<sizeOfArr; ++i)
 		if (codesToAdd[i] == c)
 		{
 			add_close_eng_word_to_translation(i);
