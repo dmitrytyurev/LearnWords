@@ -41,6 +41,16 @@ const int QUICK_ANSWER_TIME_MS = 2900;           // Время быстрого ответа в милл
 
 const char* logFileName = "log.log";
 
+//===============================================================================================
+// 
+//===============================================================================================
+
+float interp(float x1, float y1, float x2, float y2, float x)
+{
+	float k = (y2 - y1) / (x2 - x1);
+	float b = y1 - x1*k;
+	return x*k + b;
+}
 
 //===============================================================================================
 // 
@@ -150,6 +160,7 @@ int get_word_to_repeat();
 void put_word_to_end_of_random_repeat_queue_common(WordsOnDisk::WordInfo& w);
 void put_word_to_end_of_random_repeat_queue_fast(WordsOnDisk::WordInfo& w, time_t currentTime);
 void set_word_as_just_hardly_learned(WordsOnDisk::WordInfo& w);
+float calc_additional_word_probability(int checkByTimeWordsNumber);
 
 //===============================================================================================
 // 
@@ -578,7 +589,7 @@ log_random_test_words();
 	printf("1. Выучить слова\n");
 	printf("2. Повторить только что выученное или забытое [%d]\n", wordsJustLearnedAndForgottenNum);
 	printf("3. Повторить случайные слова [N]\n");
-	printf("4. Проверить слова, для которых наступило время  [%d]\n", wordsTimeToRepeatNum);
+	printf("4. Проверить слова, для которых наступило время  [%d+~%d]\n", wordsTimeToRepeatNum, int(wordsTimeToRepeatNum * calc_additional_word_probability(wordsTimeToRepeatNum)));
 	printf("\n\n");
 
 	for (const auto& index:forgottenWordsIndices)
@@ -1284,12 +1295,45 @@ void repeating_words_just_learnded_and_forgotten()
 // 
 //===============================================================================================
 
+float calc_additional_word_probability(int checkByTimeWordsNumber)
+{
+	const float MIN_PROB = 0.1f;
+	const float MAX_PROB = 0.9f;
+	const float MIN_WORDS = 25;
+	const float MAX_WORDS = 50;
+
+	float prob = interp(MAX_WORDS, MIN_PROB, MIN_WORDS, MAX_PROB, (float)checkByTimeWordsNumber);   // Рассчитаем вероятность вставки доп. слов в зависимости от числа слов для обязательной проверки по времени
+	prob = std::max(MIN_PROB, prob);
+	prob = std::min(MAX_PROB, prob);
+	return prob;
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
+
 void checking_words_by_time()
 {
+	enum class FromWhatSource
+	{
+		DEFAULT,
+		CHECK_BY_TIME,
+		RANDOM_REPEAT,
+	} fromWhatSource = FromWhatSource::DEFAULT;
+
+	struct WordToCheck
+	{
+		WordToCheck() : _index(0) {}
+		WordToCheck(int index, FromWhatSource fromWhatSource): _index(index), _fromWhatSource(fromWhatSource) {}
+
+		int  _index;                     // Индекс повторяемого слова в WordsOnDisk::_words
+		FromWhatSource _fromWhatSource;  // Тип слова
+	};
+
 	forgottenWordsIndices.clear();
 	clear_screen();
 
-	std::vector<int> wordsToRepeat;
+	std::vector<WordToCheck> wordsToRepeat;
 
 	// Выбрать слова для проверки, для которых подошло время проверки
 
@@ -1298,16 +1342,34 @@ void checking_words_by_time()
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
 		if (w.dateOfRepeat != 0 && w.dateOfRepeat < curTime)
 		{
-			wordsToRepeat.push_back(i);
+			WordToCheck wordToCheck(i, FromWhatSource::CHECK_BY_TIME);
+			wordsToRepeat.push_back(wordToCheck);
+		}
+	}
+	std::random_shuffle(wordsToRepeat.begin(), wordsToRepeat.end());
+
+	// Между слов, которые нужно проверить по времени, повставляем слова для случайной проверки
+	float prob = calc_additional_word_probability((int)wordsToRepeat.size());
+
+	for (int i = 0; i < (int)wordsToRepeat.size()-1; ++i)
+	{
+		int wordToRepeatIndex = get_word_to_repeat();
+		if (wordToRepeatIndex == -1)
+			break;
+
+		if (rand_float(0, 1) < prob)
+		{ 
+			WordToCheck wordToCheck(wordToRepeatIndex, FromWhatSource::RANDOM_REPEAT);
+			wordsToRepeat.insert(wordsToRepeat.begin() + i + 1, wordToCheck);
+			++i;
 		}
 	}
 
 	// Главный цикл проверки слов
 
-	std::random_shuffle(wordsToRepeat.begin(), wordsToRepeat.end());
 	for (int i = 0; i < (int)wordsToRepeat.size(); ++i)
 	{
-		WordsOnDisk::WordInfo& w = wordsOnDisk._words[wordsToRepeat[i]];
+		WordsOnDisk::WordInfo& w = wordsOnDisk._words[wordsToRepeat[i]._index];
 
 		clear_screen();
 		printf("\n\n===============================\n %s\n===============================\n", w.word.c_str());
@@ -1330,7 +1392,7 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 			printf("\n\n===============================\n %s\n===============================\n", w.word.c_str());
 			print_buttons_hints(w.translation, true);
 			printf("\n  Осталось: %d, Быстрый ответ = %d\n", (int)wordsToRepeat.size() - i - 1, int(isQuickAnswer));
-			CloseTranslationWordsManager ctwm(wordsToRepeat[i]);
+			CloseTranslationWordsManager ctwm(wordsToRepeat[i]._index);
 			ctwm.print_close_words_by_translation();
 
 			c = getch_filtered();
@@ -1339,40 +1401,70 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 				return;
 			if (c == 72)  // Стрелка вверх
 			{
-				put_word_to_end_of_random_repeat_queue_common(w);
-				if (isQuickAnswer)
+				if (wordsToRepeat[i]._fromWhatSource == FromWhatSource::CHECK_BY_TIME)
 				{
-					w.isNeedSkipOneRandomLoop = true;
-					w.rightAnswersNum += 2;
-				}
-				else
-					w.rightAnswersNum += 1;
+					put_word_to_end_of_random_repeat_queue_common(w);
+					if (isQuickAnswer)
+					{
+						w.isNeedSkipOneRandomLoop = true;
+						w.rightAnswersNum += 2;
+					}
+					else
+						w.rightAnswersNum += 1;
 
-				w.rightAnswersNum = std::min(w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
-				wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
-				break;
-			}
-			else
-				if (c == 80) // Стрелка вниз
-				{
-					forgottenWordsIndices.push_back(wordsToRepeat[i]);
-					set_word_as_just_hardly_learned(w);
+					w.rightAnswersNum = std::min(w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
 					wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
 					break;
 				}
 				else
-					if (c == 77) // Стрелка вправо (помним слово не очень уверенно)
+				{
+					put_word_to_end_of_random_repeat_queue_common(w);
+					if (isQuickAnswer)
+						w.isNeedSkipOneRandomLoop = true;
+					wordsOnDisk.save_to_file();
+					break;
+				}
+			}
+			else
+				if (c == 80) // Стрелка вниз
+				{
+					if (wordsToRepeat[i]._fromWhatSource == FromWhatSource::CHECK_BY_TIME)
 					{
-						forgottenWordsIndices.push_back(wordsToRepeat[i]);
-						w.rightAnswersNum = std::min(w.rightAnswersNum, RIGHT_ANSWERS_FALLBACK);
-						put_word_to_end_of_random_repeat_queue_fast(w, curTime);
+						forgottenWordsIndices.push_back(wordsToRepeat[i]._index);
+						set_word_as_just_hardly_learned(w);
 						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
 						break;
+					}
+					else
+					{
+						forgottenWordsIndices.push_back(wordsToRepeat[i]._index);
+						set_word_as_just_hardly_learned(w);
+						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
+						break;
+					}
+				}
+				else
+					if (c == 77) // Стрелка вправо (помним слово не очень уверенно)
+					{
+						if (wordsToRepeat[i]._fromWhatSource == FromWhatSource::CHECK_BY_TIME)
+						{
+							forgottenWordsIndices.push_back(wordsToRepeat[i]._index);
+							w.rightAnswersNum = std::min(w.rightAnswersNum, RIGHT_ANSWERS_FALLBACK);
+							put_word_to_end_of_random_repeat_queue_fast(w, curTime);
+							wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
+							break;
+						}
+						else
+						{
+							forgottenWordsIndices.push_back(wordsToRepeat[i]._index);
+							put_word_to_end_of_random_repeat_queue_fast(w, curTime);
+							wordsOnDisk.save_to_file();
+							break;
+						}
 					}
 		}
 	}
 }
-
 
 //===============================================================================================
 // 
