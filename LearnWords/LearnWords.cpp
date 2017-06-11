@@ -1295,7 +1295,7 @@ void checking_words_by_time()
 		WordToCheck() : _index(0) {}
 		WordToCheck(int index, FromWhatSource fromWhatSource): _index(index), _fromWhatSource(fromWhatSource) {}
 
-		int  _index;                     // Индекс повторяемого слова в WordsOnDisk::_words
+		int  _index;                     // Индекс повторяемого слова в WordsOnDisk::_words  (если _fromWhatSource == RANDOM_REPEAT, то здесь всегда 0)
 		FromWhatSource _fromWhatSource;  // Тип слова
 	};
 
@@ -1322,13 +1322,9 @@ void checking_words_by_time()
 
 	for (int i = 0; i < (int)wordsToRepeat.size()-1; ++i)
 	{
-		int wordToRepeatIndex = get_word_to_repeat();
-		if (wordToRepeatIndex == -1)
-			break;
-
 		if (rand_float(0, 1) < prob)
 		{ 
-			WordToCheck wordToCheck(wordToRepeatIndex, FromWhatSource::RANDOM_REPEAT);
+			WordToCheck wordToCheck(0, FromWhatSource::RANDOM_REPEAT);   // Индекс слова не записываем, только его тип! Индекс получим по ходу проверки
 			wordsToRepeat.insert(wordsToRepeat.begin() + i + 1, wordToCheck);
 			++i;
 		}
@@ -1338,6 +1334,13 @@ void checking_words_by_time()
 
 	for (int i = 0; i < (int)wordsToRepeat.size(); ++i)
 	{
+		if (wordsToRepeat[i]._fromWhatSource == FromWhatSource::RANDOM_REPEAT)
+		{
+			wordsToRepeat[i]._index = get_word_to_repeat();
+			if (wordsToRepeat[i]._index == -1)
+				continue;
+		}
+
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[wordsToRepeat[i]._index];
 
 		clear_screen();
