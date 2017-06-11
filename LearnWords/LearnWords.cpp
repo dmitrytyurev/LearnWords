@@ -27,15 +27,11 @@ float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1]          = { 0, 0.25f, 1,     1
 const int SECONDS_IN_DAY = 3600 * 24;
 const int TIMES_TO_REPEAT_TO_LEARN = 4;  // Сколько раз при изучении показать все слова сразу с переводом, прежде чем начать показывать без перевода
 const int TIMES_TO_GUESS_TO_LEARNED = 3;  // Сколько раз нужно правильно назвать значение слова, чтобы оно считалось первично изученным
-const int SHOW_WORD_NOT_EARLY_THAN = 10;  // Каким по счёту должно быть это слово при повторном показе (не чаще)
-const int PERCENT_FOR_NEAR_WORDS = 30;           // Какой процент слов (от введённого числа) будем повторять из ближайших (смотри описание ADDITIONAL_REPEAT_THRESHOLD_DAYS)
-                                                 // Остальной процент слов будем повторять из тех, повтор которых запланирован на более поздний срок
 const int ADDITIONAL_REPEAT_THRESHOLD_DAYS = 3;  // Граница в днях между словами, знание которых проверялось недавно и давно
 												 // Используется при рандомном выборе слов для проверки, время проверки которых ещё не настало,
 												 // но проверка была запрошена пользователем
 const int RIGHT_ANSWERS_FALLBACK = 6;            // Номер шага, на который откатывается слово при check_by_time, если помним неуверенно
 const int MIN_CLOSE_WORD_LEN = 5;                // Столько первых символов берётся из слов перевода, чтобы искать слова с похожими переводами
-const float PERCENT_FORGOT_INSERT_QUEUE = 0.3f;  // Процент от длины очереди неизученных слов куда вставим забытое слово
 const int REPEAT_AFTER_N_DAYS = 2;    // После попадения в быструю очередь рандомного повтора, слово станет доступным через это число суток
 const int QUICK_ANSWER_TIME_MS = 2900;           // Время быстрого ответа в миллисекундах
 
@@ -134,12 +130,11 @@ struct WordsOnDisk
 
 struct WordToLearn
 {
-	WordToLearn() : _index(0), _counterShown(0), _localRightAnswersNum(0), _wasLastFail(0) {}
+	WordToLearn() : _index(0), _localRightAnswersNum(0) {}
+	WordToLearn(int index) : _index(index), _localRightAnswersNum(0) {}
 
 	int  _index;                 // Индекс изучаемого слова в WordsOnDisk::_words
-	int  _counterShown;          // Запомненное значение счётчика показов слов в момент показа данного слова (используется, чтобы понять было ли показано с тех пор достаточное количество других слов)
 	int  _localRightAnswersNum;  // Количество непрерывных правильных ответов
-	bool _wasLastFail;           // true, если при последней проверке слова нажали стрелку вниз (забыли слово)
 };
 
 //===============================================================================================
@@ -159,7 +154,7 @@ void log_random_test_words();
 int get_word_to_repeat();
 void put_word_to_end_of_random_repeat_queue_common(WordsOnDisk::WordInfo& w);
 void put_word_to_end_of_random_repeat_queue_fast(WordsOnDisk::WordInfo& w, time_t currentTime);
-void set_word_as_just_hardly_learned(WordsOnDisk::WordInfo& w);
+void set_word_as_just_learned(WordsOnDisk::WordInfo& w);
 float calc_additional_word_probability(int checkByTimeWordsNumber);
 
 //===============================================================================================
@@ -655,20 +650,6 @@ int enter_number_from_console()
 // 
 //===============================================================================================
 
-void put_to_queue(std::vector<WordToLearn>& queue, const WordToLearn& wordToPut, float percent)
-{
-	int pos = static_cast<int>(queue.size() * percent);
-
-	if (pos > 0 && rand_int(0, 100) < 50)
-		--pos;
-
-	queue.insert(queue.begin() + pos, wordToPut);
-}
-
-//===============================================================================================
-// 
-//===============================================================================================
-
 void wait_time(int waitTimeSec)
 {
 	time_t t = time(NULL);
@@ -981,17 +962,30 @@ void CloseTranslationWordsManager::process_user_input(char c)
 			}
 }
 
+//===============================================================================================
+// Вставляем рандомно в последнюю или предпоследнюю позицию 
+//===============================================================================================
+
+void put_to_queue(std::vector<WordToLearn>& queue, const WordToLearn& wordToPut)
+{
+	int pos = (int)queue.size();
+
+	if (pos > 0 && rand_float(0, 1) < 0.2f)
+		--pos;
+
+	queue.insert(queue.begin() + pos, wordToPut);
+}
 
 //===============================================================================================
 // 
 //===============================================================================================
 
-int get_show_word_not_early_than(bool wasLastFail)
+bool are_all_words_learned(std::vector<WordToLearn>& queue)
 {
-	if (wasLastFail == false)
-		return SHOW_WORD_NOT_EARLY_THAN;
-
-	return static_cast<int>(PERCENT_FORGOT_INSERT_QUEUE * SHOW_WORD_NOT_EARLY_THAN);
+	for (const auto& word : queue)
+		if (word._localRightAnswersNum < TIMES_TO_GUESS_TO_LEARNED)
+			return false;
+	return true;
 }
 
 //===============================================================================================
@@ -1085,19 +1079,17 @@ void learning_words()
 	// Второй этап - слова показываются без перевода. Если пользователь угадает значение более TIMES_TO_GUESS_TO_LEARNED раз,
 	// то слово считается изученным. Цикл изучения заканчивается, когда все слова изучены.
 
-	std::vector<WordToLearn> unlearned;  // Очередь ещё не выученных слов (добавляем в конец, берём из начала)
-	std::vector<WordToLearn> learned;    // Очередь выученных слов (добавляем в конец, берём из начала)
+	std::vector<WordToLearn> learnCycleQueue;  // Циклическая очередь слов в процессе изучения (добавляем в конец, берём из начала)
 
-	// Занести слова, которые будем изучать в очередь невыученных слов
+	// Занести слова, которые будем изучать в очередь
 	for (const auto& index: wordsToLearnIndices)
 	{
 		WordToLearn word;
 		word._index = index;
-		unlearned.push_back(word);
+		learnCycleQueue.push_back(word);
 	}
 
 	// Главный цикл обучения
-	int counterWordsShown = SHOW_WORD_NOT_EARLY_THAN;  // Счётчик показанных пользователю слов
 	while (true)
 	{
 		clear_screen();
@@ -1107,34 +1099,26 @@ void learning_words()
 		enum class FromWhatSource
 		{
 			DEFAULT,
-			FROM_UNLEARNED_QUEUE,
-			FROM_LEARNED_QUEUE,
+			FROM_QUEUE,
 			FROM_RANDOM_REPEAT_LIST,
 		} fromWhatSource = FromWhatSource::DEFAULT;
 
 		int wordToRepeatIndex = get_word_to_repeat();
-		
-		if (counterWordsShown - unlearned[0]._counterShown >= get_show_word_not_early_than(unlearned[0]._wasLastFail) ||  (learned.size() == 0  &&  wordToRepeatIndex == -1))
+
+		if (rand_float(0, 1) < 0.6f  ||  wordToRepeatIndex == -1)
 		{
-			fromWhatSource = FromWhatSource::FROM_UNLEARNED_QUEUE;
-			wordToLearn = unlearned[0];
-			unlearned.erase(unlearned.begin());
-		}
-		else if (wordToRepeatIndex == -1  ||  (learned.size() > 0  &&  counterWordsShown - learned[0]._counterShown >= get_show_word_not_early_than(learned[0]._wasLastFail)))
-		{
-			fromWhatSource = FromWhatSource::FROM_LEARNED_QUEUE;
-			wordToLearn = learned[0];
-			learned.erase(learned.begin());
+			fromWhatSource = FromWhatSource::FROM_QUEUE;
+			wordToLearn = learnCycleQueue[0];
+			learnCycleQueue.erase(learnCycleQueue.begin());
 		}
 		else
 		{
 			fromWhatSource = FromWhatSource::FROM_RANDOM_REPEAT_LIST;
-			wordToLearn._index = wordToRepeatIndex;
+			wordToLearn = WordToLearn(wordToRepeatIndex);
 		}
 
 		// Показываем слово
 		WordsOnDisk::WordInfo& w = wordsOnDisk._words[wordToLearn._index];
-		wordToLearn._counterShown = ++counterWordsShown;
 		printf("\n%s\n", w.word.c_str());
 		char c = 0;
 		do
@@ -1155,23 +1139,15 @@ void learning_words()
 			{
 				switch (fromWhatSource)
 				{
-				case FromWhatSource::FROM_UNLEARNED_QUEUE:
-					if ((wordToLearn._wasLastFail == false)  &&  (++(wordToLearn._localRightAnswersNum) == TIMES_TO_GUESS_TO_LEARNED))
+				case FromWhatSource::FROM_QUEUE:
+					if (++(wordToLearn._localRightAnswersNum) == TIMES_TO_GUESS_TO_LEARNED)
 					{
-						put_to_queue(learned, wordToLearn, 1);
-						w.rightAnswersNum = 1;
+						set_word_as_just_learned(w);
 						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
-						if (unlearned.size() == 0)
+						if (are_all_words_learned(learnCycleQueue))
 							return;
 					}
-					else
-					{
-						wordToLearn._wasLastFail = false;
-						put_to_queue(unlearned, wordToLearn, 1);
-					}
-					break;
-				case FromWhatSource::FROM_LEARNED_QUEUE:
-					put_to_queue(learned, wordToLearn, 1);
+					put_to_queue(learnCycleQueue, wordToLearn);
 					break;
 				case FromWhatSource::FROM_RANDOM_REPEAT_LIST:
 					put_word_to_end_of_random_repeat_queue_common(w);
@@ -1185,21 +1161,15 @@ void learning_words()
 				{
 					switch (fromWhatSource)
 					{
-					case FromWhatSource::FROM_UNLEARNED_QUEUE:
+					case FromWhatSource::FROM_QUEUE:
 						wordToLearn._localRightAnswersNum = 0;
-						wordToLearn._wasLastFail = true;
-						put_to_queue(unlearned, wordToLearn, PERCENT_FORGOT_INSERT_QUEUE);
-						break;
-					case FromWhatSource::FROM_LEARNED_QUEUE:
+						put_to_queue(learnCycleQueue, wordToLearn);
 						w.clear_all();
 						wordsOnDisk.save_to_file();
-						wordToLearn._localRightAnswersNum = 0;
-						wordToLearn._wasLastFail = true;
-						put_to_queue(unlearned, wordToLearn, PERCENT_FORGOT_INSERT_QUEUE);
 						break;
 					case FromWhatSource::FROM_RANDOM_REPEAT_LIST:
 						forgottenWordsIndices.push_back(wordToRepeatIndex);
-						set_word_as_just_hardly_learned(w);
+						set_word_as_just_learned(w);
 						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
 						break;
 					}
@@ -1213,7 +1183,7 @@ void learning_words()
 // 
 //===============================================================================================
 
-void set_word_as_just_hardly_learned(WordsOnDisk::WordInfo& w)
+void set_word_as_just_learned(WordsOnDisk::WordInfo& w)
 {
 	w.clear_all();
 	w.rightAnswersNum = 1;
@@ -1282,7 +1252,7 @@ void repeating_words_just_learnded_and_forgotten()
 				if (c == 80) // Стрелка вниз
 				{
 					forgottenWordsIndices.push_back(wordsToRepeat[i]);
-					set_word_as_just_hardly_learned(w);
+					set_word_as_just_learned(w);
 					wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
 					break;
 				}
@@ -1430,14 +1400,14 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 					if (wordsToRepeat[i]._fromWhatSource == FromWhatSource::CHECK_BY_TIME)
 					{
 						forgottenWordsIndices.push_back(wordsToRepeat[i]._index);
-						set_word_as_just_hardly_learned(w);
+						set_word_as_just_learned(w);
 						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
 						break;
 					}
 					else
 					{
 						forgottenWordsIndices.push_back(wordsToRepeat[i]._index);
-						set_word_as_just_hardly_learned(w);
+						set_word_as_just_learned(w);
 						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
 						break;
 					}
@@ -1682,7 +1652,7 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 				if (c == 80) // Стрелка вниз (забыли слово)
 				{
 					forgottenWordsIndices.push_back(wordToRepeatIndex);
-					set_word_as_just_hardly_learned(w);
+					set_word_as_just_learned(w);
 					wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
 					break;
 				}
