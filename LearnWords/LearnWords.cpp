@@ -111,8 +111,8 @@ struct WordsOnDisk
 	};
 
 	void load_from_file(const char* fullFileName);
-	void load_from_file_legacy(const char* fullFileName);
 	void save_to_file();
+	void export_for_google_doc();
 	void fill_date_of_repeate_and_save(WordInfo& w, time_t currentTime);
 
 	std::string load_string_from_array(const std::vector<char>& buffer, int* indexToRead);
@@ -430,6 +430,42 @@ void WordsOnDisk::save_to_file()
 		else
 		{
 			fprintf(f, "\"%s\" \"%s\" %d %d %d %d %d %d %d", 
+				e.word.c_str(),
+				e.translation.c_str(),
+				e.rightAnswersNum,
+				e.dateOfRepeat,
+				e.randomTestIncID,
+				e.cantRandomTestedAfter,
+				int(e.isInFastRandomQueue),
+				int(e.isNeedSkipOneRandomLoop),
+				e.cantRandomTestedBefore);
+
+			fprintf(f, "\n");
+		}
+	}
+	fclose(f);
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+void WordsOnDisk::export_for_google_doc()
+{
+	const char* fullNameForExpot = "c:\\eng_learn_export.txt";
+
+	FILE* f = NULL;
+	fopen_s(&f, fullNameForExpot, "wt");
+	if (f == NULL)
+		exit_msg("Can't create file %s\n", fullNameForExpot);
+
+	for (const auto& e : _words)
+	{
+		if (e.rightAnswersNum == 0)
+			fprintf(f, "%s#%s\n", e.word.c_str(), e.translation.c_str());
+		else
+		{
+			fprintf(f, "%s#%s#%d#%d#%d#%d#%d#%d#%d",
 				e.word.c_str(),
 				e.translation.c_str(),
 				e.rightAnswersNum,
@@ -1691,6 +1727,7 @@ int main(int argc, char* argv[])
 	}
 	else
 		wordsOnDisk.load_from_file(argv[1]);
+	wordsOnDisk.export_for_google_doc();
 
 //wordsOnDisk.save_to_file();
 //return 0;
