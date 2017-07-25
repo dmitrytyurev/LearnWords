@@ -1382,7 +1382,7 @@ void checking_words_by_time()
 		clear_screen();
 		printf("\n\n===============================\n %s\n===============================\n", w.word.c_str());
 		auto t_start = std::chrono::high_resolution_clock::now();
-log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk._fullFileName.c_str(), get_time_in_text(curTime));
+
 		char c = 0;
 		do
 		{
@@ -1422,7 +1422,6 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 
 					w.rightAnswersNum = std::min(w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
 					wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
-					break;
 				}
 				else
 				{
@@ -1430,7 +1429,6 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 					if (isQuickAnswer)
 						w.isNeedSkipOneRandomLoop = true;
 					wordsOnDisk.save_to_file();
-					break;
 				}
 			}
 			else
@@ -1441,14 +1439,12 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 						forgottenWordsIndices.push_back(wordsToRepeat[i]._index);
 						set_word_as_just_learned(w);
 						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
-						break;
 					}
 					else
 					{
 						forgottenWordsIndices.push_back(wordsToRepeat[i]._index);
 						set_word_as_just_learned(w);
 						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
-						break;
 					}
 				}
 				else
@@ -1460,16 +1456,18 @@ log("Check by time, word = %s, ===== %s, time = %s", w.word.c_str(), wordsOnDisk
 							w.rightAnswersNum = std::min(w.rightAnswersNum, RIGHT_ANSWERS_FALLBACK);
 							put_word_to_end_of_random_repeat_queue_fast(w, curTime);
 							wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
-							break;
 						}
 						else
 						{
 							forgottenWordsIndices.push_back(wordsToRepeat[i]._index);
 							put_word_to_end_of_random_repeat_queue_fast(w, curTime);
 							wordsOnDisk.save_to_file();
-							break;
 						}
 					}
+					else
+						continue;
+			log("Check by time, word = %s, ===== %s, src=%d, key=%d, time = %s", w.word.c_str(), wordsOnDisk._fullFileName.c_str(), wordsToRepeat[i]._fromWhatSource, c, get_time_in_text(time(NULL)));
+			break;
 		}
 	}
 }
@@ -1611,6 +1609,7 @@ int get_word_to_repeat()
 void put_word_to_end_of_random_repeat_queue_common(WordsOnDisk::WordInfo& w)
 {
 	w.randomTestIncID = calc_max_randomTestIncID(false) + 1;
+log("put rand common = %d\n", w.randomTestIncID);
 	w.isInFastRandomQueue = false;
 	w.isNeedSkipOneRandomLoop = false;
 	w.cantRandomTestedBefore = 0;
@@ -1623,6 +1622,7 @@ void put_word_to_end_of_random_repeat_queue_common(WordsOnDisk::WordInfo& w)
 void put_word_to_end_of_random_repeat_queue_fast(WordsOnDisk::WordInfo& w, time_t currentTime)
 {
 	w.randomTestIncID = calc_max_randomTestIncID(true) + 1;
+log("put rand fast = %d\n", w.randomTestIncID);
 	w.isInFastRandomQueue = true;
 	w.isNeedSkipOneRandomLoop = false;
 	w.cantRandomTestedBefore = (int)currentTime + int(REPEAT_AFTER_N_DAYS * SECONDS_IN_DAY);;
