@@ -620,8 +620,8 @@ log_random_test_words();
 	printf("\n");
 	printf("1. Выучить слова\n");
 	printf("2. Повторить только что выученное или забытое [%d]\n", wordsJustLearnedAndForgottenNum);
-	printf("3. Повторить случайные слова [N]\n");
-	printf("4. Проверить слова, для которых наступило время  [%d+~%d]\n", wordsTimeToRepeatNum, int(wordsTimeToRepeatNum * calc_additional_word_probability(wordsTimeToRepeatNum)));
+	printf("3. Дополнительная проверка [N]\n");
+	printf("4. Обязательная проверка  [%d+~%d]\n", wordsTimeToRepeatNum, int(wordsTimeToRepeatNum * calc_additional_word_probability(wordsTimeToRepeatNum)));
 	printf("\n\n");
 
 	for (const auto& index:forgottenWordsIndices)
