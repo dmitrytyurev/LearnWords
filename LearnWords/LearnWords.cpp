@@ -20,6 +20,7 @@
 //===============================================================================================
 
 const static int MAX_RIGHT_REPEATS_GLOBAL_N = 16;
+const static int WORDS_LEARNED_GOOD_THRESHOLD = MAX_RIGHT_REPEATS_GLOBAL_N - 2;
 // !!! Если время сутки или больше, то вычитается 0.1f 
 float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1]          = { 0, 0.25f, 1,     1, 1, 2, 3, 3, 4, 5, 7, 10, 14, 20, 25, 35, 50 }; // если пользователь привык работать в одно и то же время суток
 float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1]          = { 0, 0.25f, 1,     1, 1, 3, 4, 4, 5, 6, 9, 12, 16, 23, 28, 40, 60 }; // ему так будет удобнее, иначе каждый день будет сдвиг вперёд
@@ -593,7 +594,7 @@ log_random_test_words();
 	for (int i = 1; i < MAX_RIGHT_REPEATS_GLOBAL_N + 1; ++i)
 	{
 		wordsLearnedTotal += wordsByLevel[i];
-		if (i >= 8)
+		if (i >= WORDS_LEARNED_GOOD_THRESHOLD)
 			wordsLearnedGood += wordsByLevel[i];
 	}
 	static int prevWordsLearnedGood;
@@ -1727,7 +1728,7 @@ int main(int argc, char* argv[])
 	}
 	else
 		wordsOnDisk.load_from_file(argv[1]);
-	wordsOnDisk.export_for_google_doc();
+//	wordsOnDisk.export_for_google_doc();
 
 //wordsOnDisk.save_to_file();
 //return 0;
