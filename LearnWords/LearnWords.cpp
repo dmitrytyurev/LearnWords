@@ -22,8 +22,8 @@
 const static int MAX_RIGHT_REPEATS_GLOBAL_N = 16;
 const static int WORDS_LEARNED_GOOD_THRESHOLD = MAX_RIGHT_REPEATS_GLOBAL_N - 2;
 // !!! Если время сутки или больше, то вычитается 0.1f 
-float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1]          = { 0, 0.25f, 1,     1, 1, 2, 3, 3, 4, 5, 7, 10, 14, 20, 25, 35, 50 }; // если пользователь привык работать в одно и то же время суток
-float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1]          = { 0, 0.25f, 1,     1, 1, 3, 4, 4, 5, 6, 9, 12, 16, 23, 28, 40, 60 }; // ему так будет удобнее, иначе каждый день будет сдвиг вперёд
+float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1]          = { 0, 0.25f, 0.25f, 1, 1, 2, 3, 3, 4, 5, 7, 10, 14, 20, 25, 35, 50 }; // если пользователь привык работать в одно и то же время суток
+float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1]          = { 0, 0.25f, 0.25f, 1, 1, 3, 4, 4, 5, 6, 9, 12, 16, 23, 28, 40, 60 }; // ему так будет удобнее, иначе каждый день будет сдвиг вперёд
 
 const int SECONDS_IN_DAY = 3600 * 24;
 const int TIMES_TO_REPEAT_TO_LEARN = 4;  // Сколько раз при изучении показать все слова сразу с переводом, прежде чем начать показывать без перевода
