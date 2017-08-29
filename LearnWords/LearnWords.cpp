@@ -1142,7 +1142,7 @@ void learning_words()
 
 		int wordToRepeatIndex = get_word_to_repeat();
 
-		if (rand_float(0, 1) < 0.6f  ||  wordToRepeatIndex == -1)
+		if (rand_float(0, 1) > 0.6f  ||  wordToRepeatIndex == -1)
 		{
 			fromWhatSource = FromWhatSource::FROM_QUEUE;
 			wordToLearn = learnCycleQueue[0];
@@ -1271,7 +1271,7 @@ void repeating_words_just_learnded_and_forgotten()
 			clear_screen();
 			printf("\n\n===============================\n %s\n===============================\n", w.word.c_str());
 			print_buttons_hints(w.translation, false);
-			printf("\n  Осталось: %d\n", (int)wordsToRepeat.size() - i - 1);
+			printf("\n  Осталось: %d, rightAnswersNum=%d\n", (int)wordsToRepeat.size() - i - 1, w.rightAnswersNum);
 			CloseTranslationWordsManager ctwm(wordsToRepeat[i]);
 			ctwm.print_close_words_by_translation();
 
@@ -1400,7 +1400,8 @@ void checking_words_by_time()
 			clear_screen();
 			printf("\n\n===============================\n %s\n===============================\n", w.word.c_str());
 			print_buttons_hints(w.translation, true);
-			printf("\n  Осталось: %d, Быстрый ответ = %d\n", (int)wordsToRepeat.size() - i - 1, int(isQuickAnswer));
+			printf("\n  Осталось: %d, Быстрый ответ = %d, rightAnswersNum=%d\n", (int)wordsToRepeat.size() - i - 1, int(isQuickAnswer), w.rightAnswersNum);
+
 			CloseTranslationWordsManager ctwm(wordsToRepeat[i]._index);
 			ctwm.print_close_words_by_translation();
 
