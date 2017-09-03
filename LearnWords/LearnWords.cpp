@@ -230,9 +230,9 @@ void _cdecl log(char *text, ...)
 	vsprintf_s(tmpStr, sizeof(tmpStr), text, args);
 	va_end(args);
 
-	FILE* f = NULL;
+	FILE* f = nullptr;
 	fopen_s(&f, logFileName, "at");
-	if (f == NULL)
+	if (f == nullptr)
 		exit_msg("Can't  create file %s\n", logFileName);
 	fprintf(f, "%s", tmpStr);
 	fclose(f);
@@ -410,9 +410,9 @@ void WordsOnDisk::load_from_file(const char* fullFileName)
 
 void WordsOnDisk::save_to_file()
 {
-	FILE* f = NULL;
+	FILE* f = nullptr;
 	fopen_s(&f, _fullFileName.c_str(), "wt");
-	if (f == NULL)
+	if (f == nullptr)
 		exit_msg("Can't create file %s\n", _fullFileName.c_str());
 
 	for (const auto& e:_compareExcludePairs)
@@ -455,9 +455,9 @@ void WordsOnDisk::export_for_google_doc()
 {
 	const char* fullNameForExpot = "c:\\eng_learn_export.txt";
 
-	FILE* f = NULL;
+	FILE* f = nullptr;
 	fopen_s(&f, fullNameForExpot, "wt");
-	if (f == NULL)
+	if (f == nullptr)
 		exit_msg("Can't create file %s\n", fullNameForExpot);
 
 	for (const auto& e : _words)
@@ -689,8 +689,8 @@ int enter_number_from_console()
 
 void wait_time(int waitTimeSec)
 {
-	time_t t = time(NULL);
-	while (time(NULL) - t < waitTimeSec)
+	time_t t = time(nullptr);
+	while (time(nullptr) - t < waitTimeSec)
 	{
 		Sleep(100);
 	}
@@ -777,7 +777,7 @@ private:
 	void add_close_eng_word_to_translation(int n);
 	void get_separate_words_from_translation(const char* __str, std::vector<std::string>& outWords);
 	bool is_word_in_filter_already(const std::string& word1, const std::string& word2);
-	bool is_word_appended_to_translation_already(const std::string& engWord);
+	bool is_word_appended_to_translation_already(const std::string& engWord) const;
 	void collect_close_words_to(std::vector<CloseWordFound>& closeWordsFound, const std::string& rusWord, int srcWordIndex, const std::string& engWord);
 
 private:
@@ -855,7 +855,7 @@ bool CloseTranslationWordsManager::is_word_in_filter_already(const std::string& 
 // 
 //===============================================================================================
 
-bool CloseTranslationWordsManager::is_word_appended_to_translation_already(const std::string& engWord)
+bool CloseTranslationWordsManager::is_word_appended_to_translation_already(const std::string& engWord) const
 {
 	WordsOnDisk::WordInfo& wSrc = wordsOnDisk._words[srcWordIndex];
 
@@ -1325,11 +1325,11 @@ void checking_words_by_time()
 		DEFAULT,
 		CHECK_BY_TIME,
 		RANDOM_REPEAT,
-	} fromWhatSource = FromWhatSource::DEFAULT;
+	};
 
 	struct WordToCheck
 	{
-		WordToCheck() : _index(0) {}
+		WordToCheck() : _index(0), _fromWhatSource(FromWhatSource::DEFAULT) {}
 		WordToCheck(int index, FromWhatSource fromWhatSource): _index(index), _fromWhatSource(fromWhatSource) {}
 
 		int  _index;                     // Индекс повторяемого слова в WordsOnDisk::_words  (если _fromWhatSource == RANDOM_REPEAT, то здесь всегда 0)
@@ -1468,7 +1468,7 @@ void checking_words_by_time()
 					}
 					else
 						continue;
-			log("Check by time, word = %s, ===== %s, src=%d, key=%d, time = %s", w.word.c_str(), wordsOnDisk._fullFileName.c_str(), wordsToRepeat[i]._fromWhatSource, c, get_time_in_text(time(NULL)));
+			log("Check by time, word = %s, ===== %s, src=%d, key=%d, time = %s", w.word.c_str(), wordsOnDisk._fullFileName.c_str(), wordsToRepeat[i]._fromWhatSource, c, get_time_in_text(time(nullptr)));
 			break;
 		}
 	}
@@ -1717,8 +1717,8 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 int main(int argc, char* argv[])
 {
 	setlocale(LC_ALL, "Russian");
-	std::srand(unsigned(std::time(0)));
-	srand((int)time(NULL));
+	std::srand(unsigned(std::time(nullptr)));
+	srand((int)time(nullptr));
 
 	if (argc != 2)
 	{
@@ -1737,7 +1737,7 @@ int main(int argc, char* argv[])
 	while (true)
 	{
 		clear_screen();
-		curTime = time(NULL);   // Текущее время обновляется один раз перед показом главного меню, чтобы число слов для повтора в меню 
+		curTime = time(nullptr);   // Текущее время обновляется один раз перед показом главного меню, чтобы число слов для повтора в меню 
 		                        // и последующем запуске режима повтора (в нём используется запомненный здесь curTime) было одинаковым .
 //		process_words_became_unreachable_for_random_repeat(curTime);
 		int keyPressed = main_menu_choose_mode();
@@ -1769,7 +1769,7 @@ int main(int argc, char* argv[])
 
 
 
-//curTime = time(NULL);
+//curTime = time(nullptr);
 //for (int i = 0; i < wordsOnDisk._words.size(); ++i)
 //{
 //	WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
