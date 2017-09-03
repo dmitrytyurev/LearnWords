@@ -21,9 +21,9 @@
 
 const static int MAX_RIGHT_REPEATS_GLOBAL_N = 20;
 const static int WORDS_LEARNED_GOOD_THRESHOLD = 14;
-                                                                                                                                 // !!! Если время сутки или больше, то вычитается 0.1f 
-float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1]          = { 0, 0.25f, 0.25f, 1, 1, 2, 3, 3, 4, 5, 7, 10, 14, 20, 25, 35, 50, 70, 90,  100, 120}; // если пользователь привык работать в одно и то же время суток
-float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1]          = { 0, 0.25f, 0.25f, 1, 1, 3, 4, 4, 5, 6, 9, 12, 16, 23, 28, 40, 60, 80, 100, 120, 150}; // ему так будет удобнее, иначе каждый день будет сдвиг вперёд
+
+float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1]          = { 0, 0.25f, 0.25f, 1, 1, 2, 3, 3, 4, 5, 7, 10, 14, 20, 25, 35, 50, 70, 90,  100, 120};
+float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1]          = { 0, 0.25f, 0.25f, 1, 1, 3, 4, 4, 5, 6, 9, 12, 16, 23, 28, 40, 60, 80, 100, 120, 150};
 
 const int SECONDS_IN_DAY = 3600 * 24;
 const int TIMES_TO_REPEAT_TO_LEARN = 4;  // Сколько раз при изучении показать все слова сразу с переводом, прежде чем начать показывать без перевода
@@ -111,10 +111,17 @@ struct WordsOnDisk
 		std::string word2;
 	};
 
+	enum class RandScopePart
+	{
+		ALL,
+		LOWER_PART,
+		HI_PART,
+	};
+
 	void load_from_file(const char* fullFileName);
 	void save_to_file();
 	void export_for_google_doc();
-	void fill_date_of_repeate_and_save(WordInfo& w, time_t currentTime);
+	void fill_date_of_repeate_and_save(WordInfo& w, time_t currentTime, RandScopePart randScopePart);
 
 	std::string load_string_from_array(const std::vector<char>& buffer, int* indexToRead);
 	int load_int_from_array(const std::vector<char>& buffer, int* indexToRead);
@@ -487,12 +494,16 @@ void WordsOnDisk::export_for_google_doc()
 // 
 //===============================================================================================
 
-void WordsOnDisk::fill_date_of_repeate_and_save(WordsOnDisk::WordInfo& w, time_t currentTime)
+void WordsOnDisk::fill_date_of_repeate_and_save(WordsOnDisk::WordInfo& w, time_t currentTime, WordsOnDisk::RandScopePart randScopePart)
 {
 	float min = addDaysMin[w.rightAnswersNum];
 	float max = addDaysMax[w.rightAnswersNum];
-	if (min > 0.99f)  min -= 0.1f;  // Если пользователь привык заниматься в одно и то же время каждый день, то нельзя выдавать слова ровно через кратные сутки
-	if (max > 0.99f)  max -= 0.1f;  // надо выдавать их чуть раньше.
+
+	if (randScopePart == WordsOnDisk::RandScopePart::LOWER_PART)
+		max = (min + max) * 0.5f;
+	else
+		if (randScopePart == WordsOnDisk::RandScopePart::HI_PART)
+			min = (min + max) * 0.5f;
 
 	float randDays = rand_float(min, max);
 //printf("%d %f %f %f %d\n", w.rightAnswersNum, min, max, randDays, int(randDays * SECONDS_IN_DAY));
@@ -1180,7 +1191,7 @@ void learning_words()
 					if (++(wordToLearn._localRightAnswersNum) == TIMES_TO_GUESS_TO_LEARNED)
 					{
 						set_word_as_just_learned(w);
-						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
+						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, WordsOnDisk::RandScopePart::ALL);
 						if (are_all_words_learned(learnCycleQueue))
 							return;
 					}
@@ -1207,7 +1218,7 @@ void learning_words()
 					case FromWhatSource::FROM_RANDOM_REPEAT_LIST:
 						forgottenWordsIndices.push_back(wordToRepeatIndex);
 						set_word_as_just_learned(w);
-						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
+						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, WordsOnDisk::RandScopePart::ALL);
 						break;
 					}
 					break;
@@ -1282,7 +1293,7 @@ void repeating_words_just_learnded_and_forgotten()
 			if (c == 72)  // Стрелка вверх
 			{
 				w.rightAnswersNum = 1;
-				wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
+				wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, WordsOnDisk::RandScopePart::ALL);
 				break;
 			}
 			else
@@ -1290,7 +1301,7 @@ void repeating_words_just_learnded_and_forgotten()
 				{
 					forgottenWordsIndices.push_back(wordsToRepeat[i]);
 					set_word_as_just_learned(w);
-					wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
+					wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, WordsOnDisk::RandScopePart::ALL);
 					break;
 				}
 		}
@@ -1414,16 +1425,16 @@ void checking_words_by_time()
 				if (wordsToRepeat[i]._fromWhatSource == FromWhatSource::CHECK_BY_TIME)
 				{
 					put_word_to_end_of_random_repeat_queue_common(w);
+					WordsOnDisk::RandScopePart randScopePart = WordsOnDisk::RandScopePart::LOWER_PART;
+					w.rightAnswersNum += 1;
 					if (isQuickAnswer)
 					{
+						randScopePart = WordsOnDisk::RandScopePart::HI_PART;
 						w.isNeedSkipOneRandomLoop = true;
-						w.rightAnswersNum += 2;
 					}
-					else
-						w.rightAnswersNum += 1;
 
 					w.rightAnswersNum = std::min(w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
-					wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
+					wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, randScopePart);
 				}
 				else
 				{
@@ -1440,13 +1451,13 @@ void checking_words_by_time()
 					{
 						forgottenWordsIndices.push_back(wordsToRepeat[i]._index);
 						set_word_as_just_learned(w);
-						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
+						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, WordsOnDisk::RandScopePart::ALL);
 					}
 					else
 					{
 						forgottenWordsIndices.push_back(wordsToRepeat[i]._index);
 						set_word_as_just_learned(w);
-						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
+						wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, WordsOnDisk::RandScopePart::ALL);
 					}
 				}
 				else
@@ -1457,7 +1468,7 @@ void checking_words_by_time()
 							forgottenWordsIndices.push_back(wordsToRepeat[i]._index);
 							w.rightAnswersNum = std::min(w.rightAnswersNum, RIGHT_ANSWERS_FALLBACK);
 							put_word_to_end_of_random_repeat_queue_fast(w, curTime);
-							wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
+							wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, WordsOnDisk::RandScopePart::ALL);
 						}
 						else
 						{
@@ -1694,7 +1705,7 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 				{
 					forgottenWordsIndices.push_back(wordToRepeatIndex);
 					set_word_as_just_learned(w);
-					wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
+					wordsOnDisk.fill_date_of_repeate_and_save(w, curTime, WordsOnDisk::RandScopePart::ALL);
 					break;
 				}
 				else
