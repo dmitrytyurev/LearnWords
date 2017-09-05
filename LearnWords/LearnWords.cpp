@@ -122,10 +122,13 @@ struct WordsOnDisk
 	void save_to_file();
 	void export_for_google_doc();
 	void fill_date_of_repeate_and_save(WordInfo& w, time_t currentTime, RandScopePart randScopePart);
+	void reset_all_words_to_repeated(time_t currentTime);
 
 	std::string load_string_from_array(const std::vector<char>& buffer, int* indexToRead);
 	int load_int_from_array(const std::vector<char>& buffer, int* indexToRead);
 	bool is_digit(char c);
+	void fill_date_of_repeate(WordsOnDisk::WordInfo& w, time_t currentTime, WordsOnDisk::RandScopePart randScopePart);
+
 
 	std::vector<WordInfo> _words;
 	std::vector<CompareExcludePair> _compareExcludePairs;
@@ -494,7 +497,7 @@ void WordsOnDisk::export_for_google_doc()
 // 
 //===============================================================================================
 
-void WordsOnDisk::fill_date_of_repeate_and_save(WordsOnDisk::WordInfo& w, time_t currentTime, WordsOnDisk::RandScopePart randScopePart)
+void WordsOnDisk::fill_date_of_repeate(WordsOnDisk::WordInfo& w, time_t currentTime, WordsOnDisk::RandScopePart randScopePart)
 {
 	float min = addDaysMin[w.rightAnswersNum];
 	float max = addDaysMax[w.rightAnswersNum];
@@ -506,13 +509,31 @@ void WordsOnDisk::fill_date_of_repeate_and_save(WordsOnDisk::WordInfo& w, time_t
 			min = (min + max) * 0.5f;
 
 	float randDays = rand_float(min, max);
-//printf("%d %f %f %f %d\n", w.rightAnswersNum, min, max, randDays, int(randDays * SECONDS_IN_DAY));
-//getch_filtered();
-	int secondsPlusCurTime  = int(randDays * SECONDS_IN_DAY);
-	w.dateOfRepeat          = (int)currentTime + secondsPlusCurTime;
+	int secondsPlusCurTime = int(randDays * SECONDS_IN_DAY);
+	w.dateOfRepeat = (int)currentTime + secondsPlusCurTime;
 	w.cantRandomTestedAfter = (int)currentTime + secondsPlusCurTime / 2;
-//log("cantRandomTestedAfter = %d, curTime = %ll, secondsPlusCurTime = %d\n", w.cantRandomTestedAfter, currentTime, secondsPlusCurTime);
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+void WordsOnDisk::fill_date_of_repeate_and_save(WordsOnDisk::WordInfo& w, time_t currentTime, WordsOnDisk::RandScopePart randScopePart)
+{
+	fill_date_of_repeate(w, currentTime, randScopePart);
 	save_to_file();
+}
+
+//===============================================================================================
+//
+//===============================================================================================
+
+void WordsOnDisk::reset_all_words_to_repeated(time_t currentTime)
+{
+	for (auto& w : wordsOnDisk._words)
+	{
+		fill_date_of_repeate(w, currentTime, WordsOnDisk::RandScopePart::ALL);
+	}
 }
 
 //===============================================================================================
@@ -1720,7 +1741,6 @@ log("Random repeat, word = %s, === %s, time = %s", w.word.c_str(), wordsOnDisk._
 	}
 }
 
-
 //===============================================================================================
 // 
 //===============================================================================================
@@ -1742,6 +1762,7 @@ int main(int argc, char* argv[])
 		wordsOnDisk.load_from_file(argv[1]);
 //	wordsOnDisk.export_for_google_doc();
 
+//wordsOnDisk.reset_all_words_to_repeated(time(nullptr));
 //wordsOnDisk.save_to_file();
 //return 0;
 
