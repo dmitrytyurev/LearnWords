@@ -53,6 +53,23 @@ float interp(float x1, float y1, float x2, float y2, float x)
 // 
 //===============================================================================================
 
+float interp_clip(float x1, float y1Min, float x2, float y2Max, float x)
+{
+	float y = interp(x1, y1Min, x2, y2Max, x);
+
+	if (y < y1Min)
+		return y1Min;
+
+	if (y > y2Max)
+		return y2Max;
+
+	return y;
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
+
 struct WordsOnDisk
 {
 	struct WordInfo
@@ -1158,6 +1175,10 @@ void learning_words()
 		learnCycleQueue.push_back(word);
 	}
 
+	const float treshold_min = 0.4f;
+	const float treshold_max = 0.6f;
+	float treshold = interp_clip(10.f, treshold_min, 5.f, treshold_max, (float)wordsToLearnIndices.size());  // Подобрано экспериментально. Если учим больше слов, то на повтор попадает меньше слов
+
 	// Главный цикл обучения
 	while (true)
 	{
@@ -1174,7 +1195,7 @@ void learning_words()
 
 		int wordToRepeatIndex = get_word_to_repeat();
 
-		if (rand_float(0, 1) > 0.6f  ||  wordToRepeatIndex == -1)
+		if (rand_float(0, 1) > treshold ||  wordToRepeatIndex == -1)
 		{
 			fromWhatSource = FromWhatSource::FROM_QUEUE;
 			wordToLearn = learnCycleQueue[0];
