@@ -139,7 +139,7 @@ struct WordsOnDisk
 	void save_to_file();
 	void export_for_google_doc();
 	void fill_date_of_repeate_and_save(WordInfo& w, time_t currentTime, RandScopePart randScopePart);
-	void reset_all_words_to_repeated(time_t currentTime);
+	void reset_all_words_to_repeated(time_t currentTime, bool bRandomizeRightAnswersNum);
 
 	std::string load_string_from_array(const std::vector<char>& buffer, int* indexToRead);
 	int load_int_from_array(const std::vector<char>& buffer, int* indexToRead);
@@ -545,11 +545,16 @@ void WordsOnDisk::fill_date_of_repeate_and_save(WordsOnDisk::WordInfo& w, time_t
 //
 //===============================================================================================
 
-void WordsOnDisk::reset_all_words_to_repeated(time_t currentTime)
+void WordsOnDisk::reset_all_words_to_repeated(time_t currentTime, bool bRandomizeRightAnswersNum)
 {
 	for (auto& w : wordsOnDisk._words)
 	{
-		fill_date_of_repeate(w, currentTime, WordsOnDisk::RandScopePart::ALL);
+		if (w.rightAnswersNum)
+		{
+			if (bRandomizeRightAnswersNum)
+				w.rightAnswersNum = rand_int(3, 16);  // FIXME
+			fill_date_of_repeate(w, currentTime, WordsOnDisk::RandScopePart::ALL);
+		}
 	}
 }
 
@@ -1783,7 +1788,7 @@ int main(int argc, char* argv[])
 		wordsOnDisk.load_from_file(argv[1]);
 //	wordsOnDisk.export_for_google_doc();
 
-//wordsOnDisk.reset_all_words_to_repeated(time(nullptr));
+//wordsOnDisk.reset_all_words_to_repeated(time(nullptr), true);
 //wordsOnDisk.save_to_file();
 //return 0;
 
