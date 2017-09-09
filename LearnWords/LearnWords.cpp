@@ -1083,7 +1083,7 @@ bool are_all_words_learned(std::vector<WordToLearn>& queue)
 // 
 //===============================================================================================
 
-void learning_words()
+void learn_new()
 {
 	forgottenWordsIndices.clear();
 	std::vector<int> wordsToLearnIndices;
@@ -1288,7 +1288,7 @@ void set_word_as_just_learned(WordsOnDisk::WordInfo& w)
 // 
 //===============================================================================================
 
-void repeating_words_just_learnded_and_forgotten()
+void repeat_of_recent()
 {
 	forgottenWordsIndices.clear();
 	clear_screen();
@@ -1376,7 +1376,7 @@ float calc_additional_word_probability(int checkByTimeWordsNumber)
 // 
 //===============================================================================================
 
-void checking_words_by_time()
+void mandatory_check()
 {
 	enum class FromWhatSource
 	{
@@ -1692,7 +1692,7 @@ log("put rand fast = %d\n", w.randomTestIncID);
 // 
 //===============================================================================================
 
-void repeating_random_words()
+void additional_check()
 {
 	forgottenWordsIndices.clear();
 	clear_screen();
@@ -1805,16 +1805,16 @@ int main(int argc, char* argv[])
 			return 0;
 			break;
 		case '1':
-			learning_words();
+			learn_new();
 			break;
 		case '2':
-			repeating_words_just_learnded_and_forgotten();
+			repeat_of_recent();
 			break;
 		case '3':
-			repeating_random_words();
+			additional_check();
 			break;
 		case '4':
-			checking_words_by_time();
+			mandatory_check();
 			break;
 		default:
 			break;
