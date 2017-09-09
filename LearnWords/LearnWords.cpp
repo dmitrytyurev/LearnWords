@@ -1826,15 +1826,3 @@ int main(int argc, char* argv[])
 }
 
 
-
-//curTime = time(nullptr);
-//for (int i = 0; i < wordsOnDisk._words.size(); ++i)
-//{
-//	WordsOnDisk::WordInfo& w = wordsOnDisk._words[i];
-//	w.isHardFirstLearned = 0;
-//	w.rightAnswersNum = rand_int(6, 8);
-//	wordsOnDisk.fill_date_of_repeate_and_save(w, curTime);
-//}
-//wordsOnDisk.save_to_file();
-//return 0;
-
