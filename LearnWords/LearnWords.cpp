@@ -1797,7 +1797,6 @@ int main(int argc, char* argv[])
 		clear_screen();
 		curTime = time(nullptr);   // Текущее время обновляется один раз перед показом главного меню, чтобы число слов для повтора в меню 
 		                        // и последующем запуске режима повтора (в нём используется запомненный здесь curTime) было одинаковым .
-//		process_words_became_unreachable_for_random_repeat(curTime);
 		int keyPressed = main_menu_choose_mode();
 		switch (keyPressed)
 		{
