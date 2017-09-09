@@ -139,7 +139,7 @@ struct WordsOnDisk
 	void save_to_file();
 	void export_for_google_doc();
 	void fill_date_of_repeate_and_save(WordInfo& w, time_t currentTime, RandScopePart randScopePart);
-	void reset_all_words_to_repeated(time_t currentTime, bool bRandomizeRightAnswersNum);
+	void reset_all_words_to_repeated(time_t currentTime);
 
 	std::string load_string_from_array(const std::vector<char>& buffer, int* indexToRead);
 	int load_int_from_array(const std::vector<char>& buffer, int* indexToRead);
@@ -545,15 +545,17 @@ void WordsOnDisk::fill_date_of_repeate_and_save(WordsOnDisk::WordInfo& w, time_t
 //
 //===============================================================================================
 
-void WordsOnDisk::reset_all_words_to_repeated(time_t currentTime, bool bRandomizeRightAnswersNum)
+void WordsOnDisk::reset_all_words_to_repeated(time_t currentTime)
 {
 	for (auto& w : wordsOnDisk._words)
 	{
 		if (w.rightAnswersNum)
 		{
-			if (bRandomizeRightAnswersNum)
-				w.rightAnswersNum = rand_int(3, 16);  // FIXME
-			fill_date_of_repeate(w, currentTime, WordsOnDisk::RandScopePart::ALL);
+			w.rightAnswersNum = 16;  // FIXME
+			float randDays = rand_float(2, 50); // FIXME
+			int secondsPlusCurTime = int(randDays * SECONDS_IN_DAY);  // FIXME   такой же код есть в fill_date_of_repeate
+			w.dateOfRepeat = (int)currentTime + secondsPlusCurTime;
+			w.cantRandomTestedAfter = (int)currentTime + secondsPlusCurTime / 2;
 		}
 	}
 }
@@ -1788,7 +1790,7 @@ int main(int argc, char* argv[])
 		wordsOnDisk.load_from_file(argv[1]);
 //	wordsOnDisk.export_for_google_doc();
 
-//wordsOnDisk.reset_all_words_to_repeated(time(nullptr), true);
+//wordsOnDisk.reset_all_words_to_repeated(time(nullptr)); // Если давно не занимался. Если перед коррекцией уже выучил новые слова, то скопировать их назад после обработки этой ф-цией
 //wordsOnDisk.save_to_file();
 //return 0;
 
