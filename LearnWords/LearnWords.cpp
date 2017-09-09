@@ -144,8 +144,7 @@ struct WordsOnDisk
 	std::string load_string_from_array(const std::vector<char>& buffer, int* indexToRead);
 	int load_int_from_array(const std::vector<char>& buffer, int* indexToRead);
 	bool is_digit(char c);
-	void fill_date_of_repeate(WordsOnDisk::WordInfo& w, time_t currentTime, WordsOnDisk::RandScopePart randScopePart);
-
+	void fill_dates(float randDays, WordsOnDisk::WordInfo &w, time_t currentTime);
 
 	std::vector<WordInfo> _words;
 	std::vector<CompareExcludePair> _compareExcludePairs;
@@ -514,18 +513,8 @@ void WordsOnDisk::export_for_google_doc()
 // 
 //===============================================================================================
 
-void WordsOnDisk::fill_date_of_repeate(WordsOnDisk::WordInfo& w, time_t currentTime, WordsOnDisk::RandScopePart randScopePart)
+void WordsOnDisk::fill_dates(float randDays, WordsOnDisk::WordInfo &w, time_t currentTime)
 {
-	float min = addDaysMin[w.rightAnswersNum];
-	float max = addDaysMax[w.rightAnswersNum];
-
-	if (randScopePart == WordsOnDisk::RandScopePart::LOWER_PART)
-		max = (min + max) * 0.5f;
-	else
-		if (randScopePart == WordsOnDisk::RandScopePart::HI_PART)
-			min = (min + max) * 0.5f;
-
-	float randDays = rand_float(min, max);
 	int secondsPlusCurTime = int(randDays * SECONDS_IN_DAY);
 	w.dateOfRepeat = (int)currentTime + secondsPlusCurTime;
 	w.cantRandomTestedAfter = (int)currentTime + secondsPlusCurTime / 2;
@@ -537,7 +526,18 @@ void WordsOnDisk::fill_date_of_repeate(WordsOnDisk::WordInfo& w, time_t currentT
 
 void WordsOnDisk::fill_date_of_repeate_and_save(WordsOnDisk::WordInfo& w, time_t currentTime, WordsOnDisk::RandScopePart randScopePart)
 {
-	fill_date_of_repeate(w, currentTime, randScopePart);
+	float min = addDaysMin[w.rightAnswersNum];
+	float max = addDaysMax[w.rightAnswersNum];
+
+	if (randScopePart == WordsOnDisk::RandScopePart::LOWER_PART)
+		max = (min + max) * 0.5f;
+	else
+		if (randScopePart == WordsOnDisk::RandScopePart::HI_PART)
+			min = (min + max) * 0.5f;
+
+	float randDays = rand_float(min, max);
+
+	fill_dates(randDays, w, currentTime);
 	save_to_file();
 }
 
@@ -553,9 +553,7 @@ void WordsOnDisk::reset_all_words_to_repeated(time_t currentTime)
 		{
 			w.rightAnswersNum = 16;  // FIXME
 			float randDays = rand_float(2, 50); // FIXME
-			int secondsPlusCurTime = int(randDays * SECONDS_IN_DAY);  // FIXME   такой же код есть в fill_date_of_repeate
-			w.dateOfRepeat = (int)currentTime + secondsPlusCurTime;
-			w.cantRandomTestedAfter = (int)currentTime + secondsPlusCurTime / 2;
+			fill_dates(randDays, w, currentTime);
 		}
 	}
 }
