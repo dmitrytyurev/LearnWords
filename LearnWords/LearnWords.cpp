@@ -139,7 +139,7 @@ struct WordsOnDisk
 	void save_to_file();
 	void export_for_google_doc();
 	void fill_dates_and_save(WordInfo& w, time_t currentTime, RandScopePart randScopePart);
-	void reset_all_words_to_repeated(time_t currentTime);
+	void reset_all_words_to_repeated(int rightAnswersToSet, float minDaysRepeat, float maxDaysRepeat, time_t currentTime);
 
 	std::string load_string_from_array(const std::vector<char>& buffer, int* indexToRead);
 	int load_int_from_array(const std::vector<char>& buffer, int* indexToRead);
@@ -545,14 +545,14 @@ void WordsOnDisk::fill_dates_and_save(WordsOnDisk::WordInfo& w, time_t currentTi
 //
 //===============================================================================================
 
-void WordsOnDisk::reset_all_words_to_repeated(time_t currentTime)
+void WordsOnDisk::reset_all_words_to_repeated(int rightAnswersToSet, float minDaysRepeat, float maxDaysRepeat, time_t currentTime)
 {
 	for (auto& w : wordsOnDisk._words)
 	{
 		if (w.rightAnswersNum)
 		{
-			w.rightAnswersNum = 16;  // FIXME
-			float randDays = rand_float(2, 50); // FIXME
+			w.rightAnswersNum = rightAnswersToSet;
+			float randDays = rand_float(minDaysRepeat, maxDaysRepeat);
 			fill_dates(randDays, w, currentTime);
 		}
 	}
@@ -1788,7 +1788,7 @@ int main(int argc, char* argv[])
 		wordsOnDisk.load_from_file(argv[1]);
 //	wordsOnDisk.export_for_google_doc();
 
-//wordsOnDisk.reset_all_words_to_repeated(time(nullptr)); // Если давно не занимался. Если перед коррекцией уже выучил новые слова, то скопировать их назад после обработки этой ф-цией
+//wordsOnDisk.reset_all_words_to_repeated(16, 2, 50, time(nullptr)); // Если давно не занимался. Если перед коррекцией уже выучил новые слова, то скопировать их назад после обработки этой ф-цией
 //wordsOnDisk.save_to_file();
 //return 0;
 
