@@ -89,7 +89,7 @@ void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAddit
 	{
 		if (wordsToRepeat[i]._fromWhatSource == FromWhatSource::RANDOM_REPEAT)
 		{
-			wordsToRepeat[i]._index = pAdditionalCheck->get_word_to_repeat();
+			wordsToRepeat[i]._index = pAdditionalCheck->get_word_to_repeat(freezedTime);
 			if (wordsToRepeat[i]._index == -1)
 				continue;
 		}

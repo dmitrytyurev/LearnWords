@@ -186,7 +186,7 @@ void LearnNew::learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 			FROM_RANDOM_REPEAT_LIST,
 		} fromWhatSource = FromWhatSource::DEFAULT;
 
-		int wordToRepeatIndex = pAdditionalCheck->get_word_to_repeat();
+		int wordToRepeatIndex = pAdditionalCheck->get_word_to_repeat(freezedTime);
 
 		if (rand_float(0, 1) > treshold || wordToRepeatIndex == -1)
 		{

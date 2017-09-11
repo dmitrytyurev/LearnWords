@@ -83,12 +83,12 @@ void LearnWordsApp::reset_all_words_to_repeated(int rightAnswersToSet, float min
 
 int LearnWordsApp::main_menu_choose_mode()
 {
-	_additionalCheck.log_random_test_words();
+	_additionalCheck.log_random_test_words(_freezedTime);
 
 	int wordsTimeToRepeatNum = 0;
 	int wordsJustLearnedAndForgottenNum = 0;
 	int wordsByLevel[MAX_RIGHT_REPEATS_GLOBAL_N + 1];
-	recalc_stats(curTime, &wordsTimeToRepeatNum, &wordsJustLearnedAndForgottenNum, wordsByLevel);
+	recalc_stats(_freezedTime, &wordsTimeToRepeatNum, &wordsJustLearnedAndForgottenNum, wordsByLevel);
 
 	int wordsLearnedTotal = 0;
 	int wordsLearnedGood = 0;
@@ -108,7 +108,7 @@ int LearnWordsApp::main_menu_choose_mode()
 	int mainQueueLen = 0;
 	int mainQueueSkipLoopCount = 0;
 	int fastQueueLen = 0;
-	_additionalCheck.calc_words_for_random_repeat(&mainQueueLen, &mainQueueSkipLoopCount, &fastQueueLen);
+	_additionalCheck.calc_words_for_random_repeat(&mainQueueLen, &mainQueueSkipLoopCount, &fastQueueLen, _freezedTime);
 
 	static int prevSkipLoopCount;
 	int deltaSkipLoopCount = 0;
@@ -255,26 +255,26 @@ void LearnWordsApp::process(int argc, char* argv[])
 	while (true)
 	{
 		clear_console_screen();
-		curTime = time(nullptr);   // Текущее время обновляется один раз перед показом главного меню, чтобы число слов для повтора в меню 
+		_freezedTime = time(nullptr);   // Текущее время обновляется один раз перед показом главного меню, чтобы число слов для повтора в меню 
 								   // и последующем запуске режима повтора (в нём используется запомненный здесь curTime) было одинаковым .
 		int keyPressed = main_menu_choose_mode();
 		switch (keyPressed)
 		{
 		case 27:  // ESC
-			printf("%ld\n", int(curTime));
+			printf("%ld\n", int(_freezedTime));
 			return;
 			break;
 		case '1':
-			_learnNew.learn_new(curTime, &_additionalCheck);
+			_learnNew.learn_new(_freezedTime, &_additionalCheck);
 			break;
 		case '2':
-			_repeatOfRecent.repeat_of_recent(curTime);
+			_repeatOfRecent.repeat_of_recent(_freezedTime);
 			break;
 		case '3':
-			_additionalCheck.additional_check(curTime, _fullFileName);
+			_additionalCheck.additional_check(_freezedTime, _fullFileName);
 			break;
 		case '4':
-			_mandatoryCheck.mandatory_check(curTime, &_additionalCheck, MAX_RIGHT_REPEATS_GLOBAL_N, _fullFileName);
+			_mandatoryCheck.mandatory_check(_freezedTime, &_additionalCheck, MAX_RIGHT_REPEATS_GLOBAL_N, _fullFileName);
 			break;
 		default:
 			break;
