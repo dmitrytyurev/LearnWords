@@ -17,7 +17,7 @@ float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 1, 1, 3, 4
 
 void LearnWordsApp::save()
 {
-   // использовать  std::string _fullFileName;
+	FileOperate::save_to_file(_fullFileName.c_str(), &wordsOnDisk);
 }
 
 
@@ -254,10 +254,11 @@ void LearnWordsApp::process(int argc, char* argv[])
 		//puts("Ussage:");
 		//puts("LearnWords.exe [path to base file]\n");
 		//return 0;
-		FileOperate::load_from_file("C:\\Dimka\\LearnWords\\dima_to_learn.txt", &wordsOnDisk);
+		_fullFileName = "C:\\Dimka\\LearnWords\\dima_to_learn.txt";
 	}
 	else
-		FileOperate::load_from_file(argv[1], &wordsOnDisk);
+		_fullFileName = argv[1];
+	FileOperate::load_from_file(_fullFileName.c_str(), &wordsOnDisk);
 	//	wordsOnDisk.export_for_google_doc();
 
 	//wordsOnDisk.reset_all_words_to_repeated(16, 2, 50, time(nullptr)); // Если давно не занимался. Если перед коррекцией уже выучил новые слова, то скопировать их назад после обработки этой ф-цией
