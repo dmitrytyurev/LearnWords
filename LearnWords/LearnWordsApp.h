@@ -35,6 +35,7 @@ struct LearnWordsApp
 	void reset_all_words_to_repeated(int rightAnswersToSet, float minDaysRepeat, float maxDaysRepeat, time_t currentTime);
 	int main_menu_choose_mode();
 	void recalc_stats(time_t curTime, int* wordsTimeToRepeatNum, int* wordsJustLearnedAndForgottenNum, int wordsByLevel[]);
+	time_t get_time();
 
 	// ѕол€
 	WordsData wordsOnDisk;   // FIXME!!! все пол€ класса должны начинатьс€ с _

@@ -230,6 +230,15 @@ void LearnWordsApp::set_word_as_just_learned(WordsData::WordInfo& w)
 	w.rightAnswersNum = 1;
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
+
+time_t LearnWordsApp::get_time()
+{
+//return 1505167116;  // Отладочный режим со стабильным временем и рандомом. При тесте отвечать на вопросы надо быстро для одинакового результата
+	return std::time(nullptr);
+}
 
 //===============================================================================================
 // 
@@ -237,6 +246,9 @@ void LearnWordsApp::set_word_as_just_learned(WordsData::WordInfo& w)
 
 void LearnWordsApp::process(int argc, char* argv[])
 {
+	std::srand((unsigned)get_time());
+	srand((int)get_time());
+
 	if (argc != 2)
 	{
 		//puts("Ussage:");
@@ -255,7 +267,8 @@ void LearnWordsApp::process(int argc, char* argv[])
 	while (true)
 	{
 		clear_console_screen();
-		_freezedTime = time(nullptr);   // Текущее время обновляется один раз перед показом главного меню, чтобы число слов для повтора в меню 
+
+		_freezedTime = get_time();   // Текущее время обновляется один раз перед показом главного меню, чтобы число слов для повтора в меню 
 								   // и последующем запуске режима повтора (в нём используется запомненный здесь curTime) было одинаковым .
 		int keyPressed = main_menu_choose_mode();
 		switch (keyPressed)
