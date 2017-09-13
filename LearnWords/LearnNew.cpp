@@ -7,7 +7,8 @@
 #include "LearnNew.h"
 
 const int TIMES_TO_GUESS_TO_LEARNED = 3;  // Сколько раз нужно правильно назвать значение слова, чтобы оно считалось первично изученным
-const int TIMES_TO_REPEAT_TO_LEARN = 4;  // Сколько раз при изучении показать все слова сразу с переводом, прежде чем начать показывать без перевода
+const int TIMES_TO_REPEAT_TO_LEARN  = 2;  // Сколько раз при изучении показать все слова сразу с переводом, прежде чем начать показывать без перевода
+const int TIMES_TO_SHOW_A_WORD      = 5;  // Сколько шагов открытия каждого слова при первичном обучении
 
 //===============================================================================================
 // 
@@ -99,39 +100,41 @@ void LearnNew::learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 	if (wordsToLearnIndices.size() == 0)
 		return;
 
-	// Первичное изучение (показываем неколько раз, постепенно скрывая слово)
+	// Первичное изучение (показываем все слова по одному разу)
+
+	for (const auto& index : wordsToLearnIndices)
+	{
+		const WordsData::WordInfo& w = _pWordsData->_words[index];
+		clear_console_screen();
+		printf("\n%s\n\n", w.word.c_str());
+		printf("%s", w.translation.c_str());
+		printf("\n");
+		char c = 0;
+		do
+		{
+			c = getch_filtered();
+			if (c == 27)
+				return;
+		} while (c != ' ');
+	}
+
+	// Первичное изучение (показываем неколько раз, сначала перевод скрыт, но постепенно открывается)
 
 	for (int i2 = 0; i2 < TIMES_TO_REPEAT_TO_LEARN; ++i2)
 	{
 		for (const auto& index : wordsToLearnIndices)
 		{
 			const WordsData::WordInfo& w = _pWordsData->_words[index];
-			char c = 0;
-
-			if (i2 != 0)
+			for (int i3 = 0; i3 < TIMES_TO_SHOW_A_WORD; ++i3)
 			{
-				int symbolsToShowNum = 0;
-				switch (i2)
-				{
-				case 0:
-					symbolsToShowNum = 100;
-					break;
-				case 1:
-					symbolsToShowNum = 3;
-					break;
-				case 2:
-					symbolsToShowNum = 2;
-					break;
-				case 3:
-					symbolsToShowNum = 1;
-					break;
-				}
+				int symbolsToShowNum = (i3 != TIMES_TO_SHOW_A_WORD -1 ? i3 : 100);
 
 				clear_console_screen();
 				printf("\n%s\n\n", w.word.c_str());
 				print_masked_translation(w.translation.c_str(), symbolsToShowNum);
 				printf("\n");
 
+				char c = 0;
 				do
 				{
 					c = getch_filtered();
@@ -139,19 +142,6 @@ void LearnNew::learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 						return;
 				} while (c != ' ');
 			}
-
-			clear_console_screen();
-			printf("\n%s\n\n", w.word.c_str());
-			printf("%s", w.translation.c_str());
-			printf("\n");
-
-			do
-			{
-				c = getch_filtered();
-				if (c == 27)
-					return;
-			} while (c != ' ');
-
 		}
 	}
 
