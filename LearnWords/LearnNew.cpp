@@ -251,3 +251,136 @@ void LearnNew::learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 		}
 	}
 }
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+void LearnNew::learn_forgotten(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
+{
+	std::vector<int> wordsToLearnIndices;
+	_learnWordsApp->get_forgotten(wordsToLearnIndices);  // Получим список забытых слов на изучение
+	if (wordsToLearnIndices.empty())
+		return;
+	_learnWordsApp->clear_forgotten();
+
+	// Первичное изучение (показываем все слова по одному разу)
+
+	for (const auto& index : wordsToLearnIndices)
+	{
+		const WordsData::WordInfo& w = _pWordsData->_words[index];
+		clear_console_screen();
+		printf("\n%s\n\n", w.word.c_str());
+		printf("%s", w.translation.c_str());
+		printf("\n");
+		char c = 0;
+		do
+		{
+			c = getch_filtered();
+			if (c == 27)
+				return;
+		} while (c != ' ');
+	}
+
+	// Второй этап - слова показываются без перевода. Если пользователь угадает значение более TIMES_TO_GUESS_TO_LEARNED раз,
+	// то слово считается изученным. Цикл изучения заканчивается, когда все слова изучены.
+
+	std::vector<WordToLearn> learnCycleQueue;  // Циклическая очередь слов в процессе изучения (добавляем в конец, берём из начала)
+
+											   // Занести слова, которые будем изучать в очередь
+	for (const auto& index : wordsToLearnIndices)
+	{
+		WordToLearn word;
+		word._index = index;
+		learnCycleQueue.push_back(word);
+	}
+
+	const float treshold_min = 0.4f;
+	const float treshold_max = 0.6f;
+	float treshold = interp_clip(10.f, treshold_min, 5.f, treshold_max, (float)wordsToLearnIndices.size());  // Подобрано экспериментально. Если учим больше слов, то на повтор попадает меньше слов
+
+																											 // Главный цикл обучения
+	while (true)
+	{
+		clear_console_screen();
+
+		// Выбрать слово, которое будем показывать
+		WordToLearn wordToLearn;
+		enum class FromWhatSource
+		{
+			DEFAULT,
+			FROM_QUEUE,
+			FROM_RANDOM_REPEAT_LIST,
+		} fromWhatSource = FromWhatSource::DEFAULT;
+
+		int wordToRepeatIndex = pAdditionalCheck->get_word_to_repeat(freezedTime);
+
+		if (rand_float(0, 1) > treshold || wordToRepeatIndex == -1)
+		{
+			fromWhatSource = FromWhatSource::FROM_QUEUE;
+			wordToLearn = learnCycleQueue[0];
+			learnCycleQueue.erase(learnCycleQueue.begin());
+		}
+		else
+		{
+			fromWhatSource = FromWhatSource::FROM_RANDOM_REPEAT_LIST;
+			wordToLearn = WordToLearn(wordToRepeatIndex);
+		}
+
+		// Показываем слово
+		WordsData::WordInfo& w = _pWordsData->_words[wordToLearn._index];
+		printf("\n%s\n", w.word.c_str());
+		char c = 0;
+		do
+		{
+			c = getch_filtered();
+			if (c == 27)
+				return;
+		} while (c != ' ');
+		_learnWordsApp->print_buttons_hints(w.translation, false);
+
+		// Обрабатываем ответ - знает ли пользователь слово
+		while (true)
+		{
+			c = getch_filtered();
+			if (c == 27)  // ESC
+				return;
+			if (c == 72)  // Стрелка вверх
+			{
+				switch (fromWhatSource)
+				{
+				case FromWhatSource::FROM_QUEUE:
+					if (++(wordToLearn._localRightAnswersNum) == TIMES_TO_GUESS_TO_LEARNED)
+					{
+						if (are_all_words_learned(learnCycleQueue))
+							return;
+					}
+					put_to_queue(learnCycleQueue, wordToLearn);
+					break;
+				case FromWhatSource::FROM_RANDOM_REPEAT_LIST:
+					pAdditionalCheck->put_word_to_end_of_random_repeat_queue_common(w);
+					_learnWordsApp->save();
+					break;
+				}
+				break;
+			}
+			else
+				if (c == 80) // Стрелка вниз
+				{
+					switch (fromWhatSource)
+					{
+					case FromWhatSource::FROM_QUEUE:
+						wordToLearn._localRightAnswersNum = 0;
+						put_to_queue(learnCycleQueue, wordToLearn);
+						break;
+					case FromWhatSource::FROM_RANDOM_REPEAT_LIST:
+						_learnWordsApp->add_forgotten(wordToRepeatIndex);
+						_learnWordsApp->set_word_as_just_learned(w);
+						_learnWordsApp->fill_dates_and_save(w, freezedTime, LearnWordsApp::RandScopePart::ALL);
+						break;
+					}
+					break;
+				}
+		}
+	}
+}

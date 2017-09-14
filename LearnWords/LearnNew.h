@@ -17,6 +17,7 @@ struct LearnNew
 
 	LearnNew(LearnWordsApp* learnWordsApp, WordsData* pWordsData) : _learnWordsApp(learnWordsApp), _pWordsData(pWordsData) {}
 	void learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck);
+	void learn_forgotten(time_t freezedTime, AdditionalCheck* pAdditionalCheck);
 	
 	void print_masked_translation(const char* _str, int symbolsToShowNum);
 	void put_to_queue(std::vector<WordToLearn>& queue, const WordToLearn& wordToPut);

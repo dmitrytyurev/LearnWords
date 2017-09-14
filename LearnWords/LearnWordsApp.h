@@ -23,6 +23,7 @@ struct LearnWordsApp
 	// ¬ызываютс€ классами более низкого уровн€
 	void clear_forgotten();
 	void add_forgotten(int forgottenWordIndex);
+	void get_forgotten(std::vector<int>& forgottenWordsIndices);
 	bool is_quick_answer(double milliSec);
 	void print_buttons_hints(const std::string& str, bool needRightKeyHint);
 	void save();
@@ -34,14 +35,14 @@ struct LearnWordsApp
 	void fill_dates(float randDays, WordsData::WordInfo &w, time_t currentTime);
 	void reset_all_words_to_repeated(int rightAnswersToSet, float minDaysRepeat, float maxDaysRepeat, time_t currentTime);
 	int main_menu_choose_mode();
-	void recalc_stats(time_t curTime, int* wordsTimeToRepeatNum, int* wordsJustLearnedAndForgottenNum, int wordsByLevel[]);
+	void recalc_stats(time_t curTime, int* wordsTimeToRepeatNum, int wordsByLevel[]);
 	time_t get_time();
 
 	// ѕол€
 	WordsData wordsOnDisk;   // FIXME!!! все пол€ класса должны начинатьс€ с _
 	std::string _fullFileName;
 	time_t _freezedTime;
-	std::vector<int> forgottenWordsIndices; // »ндексы слов, которые были забыты при последней проверке слов
+	std::vector<int> _forgottenWordsIndices; // »ндексы слов, которые были забыты при последней проверке слов
 
 	AdditionalCheck _additionalCheck;
 	MandatoryCheck  _mandatoryCheck;

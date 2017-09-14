@@ -25,20 +25,19 @@ void LearnWordsApp::save()
 //
 //===============================================================================================
 
-void LearnWordsApp::clear_forgotten()
+bool LearnWordsApp::is_quick_answer(double milliSec)
 {
-	forgottenWordsIndices.clear();
+	return milliSec < QUICK_ANSWER_TIME_MS;
 }
 
 //===============================================================================================
 //
 //===============================================================================================
 
-bool LearnWordsApp::is_quick_answer(double milliSec)
+void LearnWordsApp::clear_forgotten()
 {
-	return milliSec < QUICK_ANSWER_TIME_MS;
+	_forgottenWordsIndices.clear();
 }
-
 
 //===============================================================================================
 //
@@ -46,8 +45,18 @@ bool LearnWordsApp::is_quick_answer(double milliSec)
 
 void LearnWordsApp::add_forgotten(int forgottenWordIndex)
 {
-	forgottenWordsIndices.push_back(forgottenWordIndex);
+	_forgottenWordsIndices.push_back(forgottenWordIndex);
 }
+
+//===============================================================================================
+//
+//===============================================================================================
+
+void LearnWordsApp::get_forgotten(std::vector<int>& forgottenWordsIndices)
+{
+	forgottenWordsIndices = _forgottenWordsIndices;
+}
+
 
 //===============================================================================================
 //
@@ -86,9 +95,8 @@ int LearnWordsApp::main_menu_choose_mode()
 	_additionalCheck.log_random_test_words(_freezedTime);
 
 	int wordsTimeToRepeatNum = 0;
-	int wordsJustLearnedAndForgottenNum = 0;
 	int wordsByLevel[MAX_RIGHT_REPEATS_GLOBAL_N + 1];
-	recalc_stats(_freezedTime, &wordsTimeToRepeatNum, &wordsJustLearnedAndForgottenNum, wordsByLevel);
+	recalc_stats(_freezedTime, &wordsTimeToRepeatNum, wordsByLevel);
 
 	int wordsLearnedTotal = 0;
 	int wordsLearnedGood = 0;
@@ -119,13 +127,13 @@ int LearnWordsApp::main_menu_choose_mode()
 
 	printf("\n");
 	printf("\n");
-	printf("1. Выучить слова\n");
-	printf("2. Повторить только что выученное или забытое [%d]\n", wordsJustLearnedAndForgottenNum);
+	printf("1. Выучить новые слова\n");
+	printf("2. Выучить забытое [%d]\n", _forgottenWordsIndices.size());
 	printf("3. Дополнительная проверка [N]\n");
 	printf("4. Обязательная проверка  [%d+~%d]\n", wordsTimeToRepeatNum, int(wordsTimeToRepeatNum * _mandatoryCheck.calc_additional_word_probability(wordsTimeToRepeatNum)));
 	printf("\n\n");
 
-	for (const auto& index : forgottenWordsIndices)
+	for (const auto& index : _forgottenWordsIndices)
 	{
 		WordsData::WordInfo& w = wordsOnDisk._words[index];
 		printf("==============================================\n%s\n   %s\n", w.word.c_str(), w.translation.c_str());
@@ -147,10 +155,9 @@ int LearnWordsApp::main_menu_choose_mode()
 // 
 //===============================================================================================
 
-void LearnWordsApp::recalc_stats(time_t curTime, int* wordsTimeToRepeatNum, int* wordsJustLearnedAndForgottenNum, int wordsByLevel[])
+void LearnWordsApp::recalc_stats(time_t curTime, int* wordsTimeToRepeatNum, int wordsByLevel[])
 {
 	*wordsTimeToRepeatNum = 0;
-	*wordsJustLearnedAndForgottenNum = 0;
 
 	for (int i = 0; i < MAX_RIGHT_REPEATS_GLOBAL_N + 1; ++i)
 		wordsByLevel[i] = 0;
@@ -166,9 +173,6 @@ void LearnWordsApp::recalc_stats(time_t curTime, int* wordsTimeToRepeatNum, int*
 
 			if (w.dateOfRepeat < curTime)
 				++(*wordsTimeToRepeatNum);
-
-			if (isWordJustLearnedOrForgotten(w, curTime))
-				++(*wordsJustLearnedAndForgottenNum);
 		}
 	}
 
@@ -282,7 +286,8 @@ void LearnWordsApp::process(int argc, char* argv[])
 			_learnNew.learn_new(_freezedTime, &_additionalCheck);
 			break;
 		case '2':
-			_repeatOfRecent.repeat_of_recent(_freezedTime);
+//			_repeatOfRecent.repeat_of_recent(_freezedTime);
+			_learnNew.learn_forgotten(_freezedTime, &_additionalCheck);
 			break;
 		case '3':
 			_additionalCheck.additional_check(_freezedTime, _fullFileName);
