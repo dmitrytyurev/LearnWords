@@ -46,11 +46,11 @@ void LearnNew::print_masked_translation(const char* _str, int symbolsToShowNum)
 // Вставляем рандомно в последнюю или предпоследнюю позицию 
 //===============================================================================================
 
-void LearnNew::put_to_queue(std::vector<WordToLearn>& queue, const WordToLearn& wordToPut)
+void LearnNew::put_to_queue(std::vector<WordToLearn>& queue, const WordToLearn& wordToPut, bool needRandomInsert)
 {
 	int pos = (int)queue.size();
 
-	if (pos > 0 && rand_float(0, 1) < 0.2f)
+	if (needRandomInsert && (pos > 0 && rand_float(0, 1) < 0.2f))
 		--pos;
 
 	queue.insert(queue.begin() + pos, wordToPut);
@@ -172,7 +172,7 @@ void LearnNew::learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 		enum class FromWhatSource
 		{
 			DEFAULT,
-			FROM_QUEUE,
+			FROM_LEANRING_QUEUE,
 			FROM_RANDOM_REPEAT_LIST,
 		} fromWhatSource = FromWhatSource::DEFAULT;
 
@@ -180,7 +180,7 @@ void LearnNew::learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 
 		if (rand_float(0, 1) > treshold || wordToRepeatIndex == -1)
 		{
-			fromWhatSource = FromWhatSource::FROM_QUEUE;
+			fromWhatSource = FromWhatSource::FROM_LEANRING_QUEUE;
 			wordToLearn = learnCycleQueue[0];
 			learnCycleQueue.erase(learnCycleQueue.begin());
 		}
@@ -212,7 +212,7 @@ void LearnNew::learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 			{
 				switch (fromWhatSource)
 				{
-				case FromWhatSource::FROM_QUEUE:
+				case FromWhatSource::FROM_LEANRING_QUEUE:
 					if (++(wordToLearn._localRightAnswersNum) == TIMES_TO_GUESS_TO_LEARNED)
 					{
 						_learnWordsApp->set_word_as_just_learned(w);
@@ -220,7 +220,7 @@ void LearnNew::learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 						if (are_all_words_learned(learnCycleQueue))
 							return;
 					}
-					put_to_queue(learnCycleQueue, wordToLearn);
+					put_to_queue(learnCycleQueue, wordToLearn, true);
 					break;
 				case FromWhatSource::FROM_RANDOM_REPEAT_LIST:
 					pAdditionalCheck->put_word_to_end_of_random_repeat_queue_common(w);
@@ -234,9 +234,9 @@ void LearnNew::learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 				{
 					switch (fromWhatSource)
 					{
-					case FromWhatSource::FROM_QUEUE:
+					case FromWhatSource::FROM_LEANRING_QUEUE:
 						wordToLearn._localRightAnswersNum = 0;
-						put_to_queue(learnCycleQueue, wordToLearn);
+						put_to_queue(learnCycleQueue, wordToLearn, true);
 						w.clear_all();
 						_learnWordsApp->save();
 						break;
@@ -295,11 +295,7 @@ void LearnNew::learn_forgotten(time_t freezedTime, AdditionalCheck* pAdditionalC
 		learnCycleQueue.push_back(word);
 	}
 
-	const float treshold_min = 0.4f;
-	const float treshold_max = 0.6f;
-	float treshold = interp_clip(10.f, treshold_min, 5.f, treshold_max, (float)wordsToLearnIndices.size());  // Подобрано экспериментально. Если учим больше слов, то на повтор попадает меньше слов
-
-																											 // Главный цикл обучения
+	int showFromRandomNum = rand_int(0, 3);
 	while (true)
 	{
 		clear_console_screen();
@@ -309,15 +305,17 @@ void LearnNew::learn_forgotten(time_t freezedTime, AdditionalCheck* pAdditionalC
 		enum class FromWhatSource
 		{
 			DEFAULT,
-			FROM_QUEUE,
+			FROM_LEANRING_QUEUE,
 			FROM_RANDOM_REPEAT_LIST,
 		} fromWhatSource = FromWhatSource::DEFAULT;
 
 		int wordToRepeatIndex = pAdditionalCheck->get_word_to_repeat(freezedTime);
 
-		if (rand_float(0, 1) > treshold || wordToRepeatIndex == -1)
+		bool wantShowLearnWord = (--showFromRandomNum == -1);
+		if (wantShowLearnWord || wordToRepeatIndex == -1)
 		{
-			fromWhatSource = FromWhatSource::FROM_QUEUE;
+			showFromRandomNum = rand_int(1, 3);
+			fromWhatSource = FromWhatSource::FROM_LEANRING_QUEUE;
 			wordToLearn = learnCycleQueue[0];
 			learnCycleQueue.erase(learnCycleQueue.begin());
 		}
@@ -349,13 +347,13 @@ void LearnNew::learn_forgotten(time_t freezedTime, AdditionalCheck* pAdditionalC
 			{
 				switch (fromWhatSource)
 				{
-				case FromWhatSource::FROM_QUEUE:
+				case FromWhatSource::FROM_LEANRING_QUEUE:
 					if (++(wordToLearn._localRightAnswersNum) == TIMES_TO_GUESS_TO_LEARNED)
 					{
 						if (are_all_words_learned(learnCycleQueue))
 							return;
 					}
-					put_to_queue(learnCycleQueue, wordToLearn);
+					put_to_queue(learnCycleQueue, wordToLearn, false);
 					break;
 				case FromWhatSource::FROM_RANDOM_REPEAT_LIST:
 					pAdditionalCheck->put_word_to_end_of_random_repeat_queue_common(w);
@@ -369,9 +367,9 @@ void LearnNew::learn_forgotten(time_t freezedTime, AdditionalCheck* pAdditionalC
 				{
 					switch (fromWhatSource)
 					{
-					case FromWhatSource::FROM_QUEUE:
+					case FromWhatSource::FROM_LEANRING_QUEUE:
 						wordToLearn._localRightAnswersNum = 0;
-						put_to_queue(learnCycleQueue, wordToLearn);
+						put_to_queue(learnCycleQueue, wordToLearn, false);
 						break;
 					case FromWhatSource::FROM_RANDOM_REPEAT_LIST:
 						_learnWordsApp->add_forgotten(wordToRepeatIndex);

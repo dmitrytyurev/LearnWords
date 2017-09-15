@@ -20,7 +20,7 @@ struct LearnNew
 	void learn_forgotten(time_t freezedTime, AdditionalCheck* pAdditionalCheck);
 	
 	void print_masked_translation(const char* _str, int symbolsToShowNum);
-	void put_to_queue(std::vector<WordToLearn>& queue, const WordToLearn& wordToPut);
+	void put_to_queue(std::vector<WordToLearn>& queue, const WordToLearn& wordToPut, bool needRandomInsert);
 	bool are_all_words_learned(std::vector<WordToLearn>& queue);
 
 	WordsData*     _pWordsData;
