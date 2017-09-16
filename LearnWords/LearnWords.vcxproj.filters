@@ -42,9 +42,6 @@
     <ClInclude Include="MandatoryCheck.h">
       <Filter>Файлы исходного кода</Filter>
     </ClInclude>
-    <ClInclude Include="RepeatOfRecent.h">
-      <Filter>Файлы исходного кода</Filter>
-    </ClInclude>
     <ClInclude Include="WordsData.h">
       <Filter>Файлы исходного кода</Filter>
     </ClInclude>
@@ -75,9 +72,6 @@
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
     <ClCompile Include="MandatoryCheck.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
-    <ClCompile Include="RepeatOfRecent.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
     <ClCompile Include="WordsData.cpp">
