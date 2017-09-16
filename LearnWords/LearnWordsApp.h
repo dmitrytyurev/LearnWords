@@ -8,7 +8,7 @@
 
 struct LearnWordsApp
 {
-	LearnWordsApp(): _additionalCheck(this, &wordsOnDisk), _mandatoryCheck(this, &wordsOnDisk), _learnNew(this, &wordsOnDisk), _freezedTime(0) {}
+	LearnWordsApp(): _additionalCheck(this, &_wordsOnDisk), _mandatoryCheck(this, &_wordsOnDisk), _learnNew(this, &_wordsOnDisk), _freezedTime(0) {}
 
 	enum class RandScopePart
 	{
@@ -38,7 +38,7 @@ struct LearnWordsApp
 	time_t get_time();
 
 	// ѕол€
-	WordsData wordsOnDisk;   // FIXME!!! все пол€ класса должны начинатьс€ с _
+	WordsData _wordsOnDisk;
 	std::string _fullFileName;
 	time_t _freezedTime;
 	std::vector<int> _forgottenWordsIndices; // »ндексы слов, которые были забыты при последней проверке слов

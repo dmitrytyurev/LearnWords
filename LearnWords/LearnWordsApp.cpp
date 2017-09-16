@@ -17,7 +17,7 @@ float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 1, 1, 3, 4
 
 void LearnWordsApp::save()
 {
-	FileOperate::save_to_file(_fullFileName.c_str(), &wordsOnDisk);
+	FileOperate::save_to_file(_fullFileName.c_str(), &_wordsOnDisk);
 }
 
 
@@ -74,7 +74,7 @@ bool LearnWordsApp::isWordJustLearnedOrForgotten(const WordsData::WordInfo& w, t
 
 void LearnWordsApp::reset_all_words_to_repeated(int rightAnswersToSet, float minDaysRepeat, float maxDaysRepeat, time_t currentTime)
 {
-	for (auto& w : wordsOnDisk._words)
+	for (auto& w : _wordsOnDisk._words)
 	{
 		if (w.rightAnswersNum)
 		{
@@ -135,7 +135,7 @@ int LearnWordsApp::main_menu_choose_mode()
 
 	for (const auto& index : _forgottenWordsIndices)
 	{
-		WordsData::WordInfo& w = wordsOnDisk._words[index];
+		WordsData::WordInfo& w = _wordsOnDisk._words[index];
 		printf("==============================================\n%s\n   %s\n", w.word.c_str(), w.translation.c_str());
 	}
 
@@ -162,7 +162,7 @@ void LearnWordsApp::recalc_stats(time_t curTime, int* wordsTimeToRepeatNum, int 
 	for (int i = 0; i < MAX_RIGHT_REPEATS_GLOBAL_N + 1; ++i)
 		wordsByLevel[i] = 0;
 
-	for (const auto& w : wordsOnDisk._words)
+	for (const auto& w : _wordsOnDisk._words)
 	{
 		++(wordsByLevel[w.rightAnswersNum]);
 
@@ -262,7 +262,7 @@ void LearnWordsApp::process(int argc, char* argv[])
 	}
 	else
 		_fullFileName = argv[1];
-	FileOperate::load_from_file(_fullFileName.c_str(), &wordsOnDisk);
+	FileOperate::load_from_file(_fullFileName.c_str(), &_wordsOnDisk);
 	//	wordsOnDisk.export_for_google_doc();
 
 	//wordsOnDisk.reset_all_words_to_repeated(16, 2, 50, time(nullptr)); // Если давно не занимался. Если перед коррекцией уже выучил новые слова, то скопировать их назад после обработки этой ф-цией
