@@ -1,4 +1,7 @@
 #include "stdafx.h"
+#define NOMINMAX
+#include <algorithm>
+
 #include "CloseTranslationWordsManager.h"
 #include "CommonUtility.h"
 #include "WordsData.h"
