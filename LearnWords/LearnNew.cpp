@@ -140,6 +140,11 @@ void LearnNew::learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 					c = getch_filtered();
 					if (c == 27)
 						return;
+					if (c == 72)  // Стрелка вверх
+					{
+						i3 = TIMES_TO_SHOW_A_WORD - 2;  // Сразу открыть слово, без плавного появления
+						break;
+					}
 				} while (c != ' ');
 			}
 		}
