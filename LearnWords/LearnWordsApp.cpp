@@ -286,7 +286,6 @@ void LearnWordsApp::process(int argc, char* argv[])
 			_learnNew.learn_new(_freezedTime, &_additionalCheck);
 			break;
 		case '2':
-//			_repeatOfRecent.repeat_of_recent(_freezedTime);
 			_learnNew.learn_forgotten(_freezedTime, &_additionalCheck);
 			break;
 		case '3':
