@@ -97,7 +97,7 @@ void LearnNew::learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 		}
 	}
 
-	if (wordsToLearnIndices.size() == 0)
+	if (wordsToLearnIndices.empty())
 		return;
 
 	// Первичное изучение (показываем все слова по одному разу)
