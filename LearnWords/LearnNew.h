@@ -9,7 +9,7 @@ struct LearnNew
 	struct WordToLearn
 	{
 		WordToLearn() : _index(0), _localRightAnswersNum(0) {}
-		WordToLearn(int index) : _index(index), _localRightAnswersNum(0) {}
+		explicit WordToLearn(int index) : _index(index), _localRightAnswersNum(0) {}
 
 		int  _index;                 // Индекс изучаемого слова в WordsOnDisk::_words
 		int  _localRightAnswersNum;  // Количество непрерывных правильных ответов
