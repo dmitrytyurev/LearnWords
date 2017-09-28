@@ -1,5 +1,37 @@
 #include "stdafx.h"
+#include <mmdeviceapi.h>
+#include <endpointvolume.h>
 #include "SoundClip.h"
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+float SetWindowsAudioVolume(float newVolume)
+{
+	HRESULT hr = 0;
+
+	CoInitialize(nullptr);
+	IMMDeviceEnumerator *deviceEnumerator = nullptr;
+	hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_INPROC_SERVER, __uuidof(IMMDeviceEnumerator), (LPVOID *)&deviceEnumerator);
+	IMMDevice *defaultDevice = nullptr;
+
+	hr = deviceEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &defaultDevice);
+	deviceEnumerator->Release();
+	deviceEnumerator = nullptr;
+
+	IAudioEndpointVolume *endpointVolume = nullptr;
+	hr = defaultDevice->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_INPROC_SERVER, nullptr, (LPVOID *)&endpointVolume);
+	defaultDevice->Release();
+	defaultDevice = nullptr;
+	float prevVolume = 0;
+	hr = endpointVolume->GetMasterVolumeLevelScalar(&prevVolume);
+	hr = endpointVolume->SetMasterVolumeLevelScalar(newVolume, nullptr);
+	endpointVolume->Release();
+
+	CoUninitialize();
+	return prevVolume;
+}
 
 //===============================================================================================
 // 
@@ -53,31 +85,48 @@ HWND find_main_window(unsigned long process_id)
 // 
 //===============================================================================================
 
-SoundClip::SoundClip(const std::string& fileNameWithPath, int startSec, int stopSec)
+SoundClip::SoundClip(const std::string& fileNameWithPath, int startMilliSec, int stopMilliSec)
 {
-	hdl = (HANDLE)_spawnl(_P_NOWAIT, 
+	prevVolume = SetWindowsAudioVolume(0);
+
+	processHandle = (HANDLE)_spawnl(_P_NOWAIT, 
 		"C:\\Program Files\\VideoLAN\\VLC\\vlc.exe", 
 		"vlc.exe", 
 		fileNameWithPath.c_str(), 
 		"--start-time", 
-		std::to_string(startSec).c_str(), 
-		"--stop-time", 
-		std::to_string(stopSec).c_str(),
-		"--play-and-exit", 
+		std::to_string(startMilliSec / 1000).c_str(),
 		"", 
 		NULL);
+
+	while (true)
+	{
+		DWORD pid = GetProcessId(processHandle);
+		if (pid == 0)
+			continue;
+
+		HWND hWnd = find_main_window(pid);
+		if (!hWnd)
+			continue;
+		break;
+	}
+
+	timer.start(1000);
+	timeToTurnVolumeUp = startMilliSec % 1000;
+	fullTimeOfPlay = stopMilliSec - startMilliSec / 1000 * 1000; // Полное время звучания ролика с учётом округления до начала первой секунды
+
+	threadObj = std::thread(&SoundClip::watch_thread, this);
 }
 
 //===============================================================================================
 // 
 //===============================================================================================
 
-SoundClip::~SoundClip()
+void SoundClip::stop_player()
 {
-	if (int(hdl) == -1)
+	if (int(processHandle) == -1)
 		return;
 
-	DWORD pid = GetProcessId(hdl);
+	DWORD pid = GetProcessId(processHandle);
 	if (pid == 0)
 		return;
 
@@ -86,6 +135,52 @@ SoundClip::~SoundClip()
 		return;
 
 	::SendMessage(hWnd, WM_CLOSE, NULL, NULL);
-	CloseHandle(hWnd);
+
+	while (true)
+	{
+		DWORD res = 0;
+		GetExitCodeProcess(processHandle, &res);
+		if (res != STILL_ACTIVE)
+			break;
+		Sleep(3);
+	}
+	CloseHandle(processHandle);
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+void SoundClip::watch_thread()
+{
+	while (true)
+	{
+		__int64 curTime = timer.get();
+		if (curTime >= timeToTurnVolumeUp)
+			break;
+		Sleep(5);
+	}
+
+	SetWindowsAudioVolume(prevVolume);
+
+	while (true)
+	{
+		__int64 curTime = timer.get();
+		if (curTime >= fullTimeOfPlay)
+			break;
+		Sleep(5);
+	}
+
+	stop_player();
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+
+SoundClip::~SoundClip()
+{
+	threadObj.join();
 }
 

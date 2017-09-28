@@ -93,6 +93,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);Winmm.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -123,6 +124,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);Winmm.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -150,8 +152,10 @@
     <ClInclude Include="CloseTranslationWordsManager.h" />
     <ClInclude Include="CommonUtility.h" />
     <ClInclude Include="FileOperate.h" />
+    <ClInclude Include="HightResolutionTimer.h" />
     <ClInclude Include="LearnNew.h" />
     <ClInclude Include="LearnWordsApp.h" />
+    <ClInclude Include="Listening.h" />
     <ClInclude Include="MandatoryCheck.h" />
     <ClInclude Include="SoundClip.h" />
     <ClInclude Include="stdafx.h" />
@@ -163,9 +167,11 @@
     <ClCompile Include="CloseTranslationWordsManager.cpp" />
     <ClCompile Include="CommonUtility.cpp" />
     <ClCompile Include="FileOperate.cpp" />
+    <ClCompile Include="HightResolutionTimer.cpp" />
     <ClCompile Include="LearnNew.cpp" />
     <ClCompile Include="LearnWords.cpp" />
     <ClCompile Include="LearnWordsApp.cpp" />
+    <ClCompile Include="Listening.cpp" />
     <ClCompile Include="MandatoryCheck.cpp" />
     <ClCompile Include="SoundClip.cpp" />
     <ClCompile Include="stdafx.cpp">
