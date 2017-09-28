@@ -22,4 +22,5 @@ private:
 	float prevVolume;
 	int timeToTurnVolumeUp;
 	int fullTimeOfPlay;
+	volatile bool quitNow;
 };

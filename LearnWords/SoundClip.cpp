@@ -87,6 +87,7 @@ HWND find_main_window(unsigned long process_id)
 
 SoundClip::SoundClip(const std::string& fileNameWithPath, int startMilliSec, int stopMilliSec)
 {
+	quitNow = false;
 	prevVolume = SetWindowsAudioVolume(0);
 
 	processHandle = (HANDLE)_spawnl(_P_NOWAIT, 
@@ -155,6 +156,13 @@ void SoundClip::watch_thread()
 {
 	while (true)
 	{
+		if (quitNow)
+		{
+			stop_player();
+			SetWindowsAudioVolume(prevVolume);
+			return;
+		}
+		
 		__int64 curTime = timer.get();
 		if (curTime >= timeToTurnVolumeUp)
 			break;
@@ -163,7 +171,7 @@ void SoundClip::watch_thread()
 
 	SetWindowsAudioVolume(prevVolume);
 
-	while (true)
+	while (!quitNow)
 	{
 		__int64 curTime = timer.get();
 		if (curTime >= fullTimeOfPlay)
@@ -181,6 +189,7 @@ void SoundClip::watch_thread()
 
 SoundClip::~SoundClip()
 {
+	quitNow = true;
 	threadObj.join();
 }
 
