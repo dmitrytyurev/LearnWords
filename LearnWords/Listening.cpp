@@ -48,7 +48,7 @@ int get_vcode()
 
 
 
-void test()
+void listening()
 {
 	init_vcode_getter();
 
@@ -83,7 +83,7 @@ void test()
 			clip.play(fullFileName, timeSamples[n], timeSamples[n + 1]);
 		}
 
-		if (key == VK_RIGHT && n < timeSamples.size() - 2)
+		if (key == VK_RIGHT && n < int(timeSamples.size()) - 2)
 		{
 			++n;
 			clip.play(fullFileName, timeSamples[n], timeSamples[n + 1]);
