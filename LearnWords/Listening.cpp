@@ -5,8 +5,53 @@
 #include <vector>
 
 
+struct KEY_WATCHED
+{
+	KEY_WATCHED() : keyCode(0), wasPressedLastTime(false) {}
+
+	int  keyCode;
+	bool wasPressedLastTime;
+};
+
+std::vector<KEY_WATCHED> keysWatched;
+
+void init_vcode_getter()
+{
+	KEY_WATCHED kw;
+	kw.keyCode = VK_DOWN;
+	keysWatched.push_back(kw);
+	kw.keyCode = VK_UP;
+	keysWatched.push_back(kw);
+	kw.keyCode = VK_LEFT;
+	keysWatched.push_back(kw);
+	kw.keyCode = VK_RIGHT;
+	keysWatched.push_back(kw);
+	kw.keyCode = VK_ESCAPE;
+	keysWatched.push_back(kw);
+}
+
+int get_vcode()
+{
+	while (true)
+	{
+		for (auto& kw : keysWatched)
+		{
+			bool isPressed = GetAsyncKeyState(kw.keyCode) != 0;
+			bool wasPressedLastTime = kw.wasPressedLastTime;
+			kw.wasPressedLastTime = isPressed;
+
+			if (isPressed && !wasPressedLastTime)
+				return kw.keyCode;
+		}
+	}
+}
+
+
+
 void test()
 {
+	init_vcode_getter();
+
 	std::vector<int> timeSamples;
 	timeSamples.push_back(0);
 	timeSamples.push_back(1210);
@@ -23,34 +68,33 @@ void test()
 
 	while (true)
 	{
-		char c = getch_filtered();
-		if (c == 27)
+		int key = get_vcode();
+		if (key == VK_ESCAPE)
 			return;
 
-
-		if (c == 72) // Стрелка вверх
+		if (key == VK_UP)
 		{
 			clip.play(fullFileName, timeSamples[n], timeSamples[n + 1]);
 		}
 
-		if (c == 75 && n > 0) // Стрелка влево
+		if (key == VK_LEFT && n > 0)
 		{
 			--n;
 			clip.play(fullFileName, timeSamples[n], timeSamples[n + 1]);
 		}
 
-		if (c == 77 && n < timeSamples.size() - 2) // Стрелка вправо
+		if (key == VK_RIGHT && n < timeSamples.size() - 2)
 		{
 			++n;
 			clip.play(fullFileName, timeSamples[n], timeSamples[n + 1]);
 		}
 
-		if (c == 80) // Стрелка вниз
+		if (key == VK_DOWN)
 		{
 			clip.stop();
 		}
 
-		printf("%d\n", c);
+//		printf("%d\n", key);
 	}
 	
 }
