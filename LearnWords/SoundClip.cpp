@@ -85,18 +85,28 @@ HWND find_main_window(unsigned long process_id)
 // 
 //===============================================================================================
 
-SoundClip::SoundClip(const std::string& fileNameWithPath, int startMilliSec, int stopMilliSec)
+SoundClip::SoundClip(): processHandle((HANDLE)-1), prevVolume(0), timeToTurnVolumeUp(0), fullTimeOfPlay(0), quitNow(false)
 {
+}
+
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+void SoundClip::play(const std::string& fileNameWithPath, int startMilliSec, int stopMilliSec)
+{
+	stop();
 	quitNow = false;
 	prevVolume = SetWindowsAudioVolume(0);
 
-	processHandle = (HANDLE)_spawnl(_P_NOWAIT, 
-		"C:\\Program Files\\VideoLAN\\VLC\\vlc.exe", 
-		"vlc.exe", 
-		fileNameWithPath.c_str(), 
-		"--start-time", 
+	processHandle = (HANDLE)_spawnl(_P_NOWAIT,
+		"C:\\Program Files\\VideoLAN\\VLC\\vlc.exe",
+		"vlc.exe",
+		fileNameWithPath.c_str(),
+		"--start-time",
 		std::to_string(startMilliSec / 1000).c_str(),
-		"", 
+		"",
 		NULL);
 
 	while (true)
@@ -146,6 +156,7 @@ void SoundClip::stop_player()
 		Sleep(3);
 	}
 	CloseHandle(processHandle);
+	processHandle = (HANDLE)-1;
 }
 
 //===============================================================================================
@@ -186,10 +197,21 @@ void SoundClip::watch_thread()
 // 
 //===============================================================================================
 
+void SoundClip::stop()
+{
+	quitNow = true;
+	if (threadObj.joinable())
+		threadObj.join();
+	quitNow = false;
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
+
 
 SoundClip::~SoundClip()
 {
-	quitNow = true;
-	threadObj.join();
+	stop();
 }
 

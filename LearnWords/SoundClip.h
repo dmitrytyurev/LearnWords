@@ -8,11 +8,12 @@
 class SoundClip
 {
 public:
-	SoundClip(const std::string& fileNameWithPath, int startMilliSec, int stopMilliSec);
+	SoundClip();
+	void play(const std::string& fileNameWithPath, int startMilliSec, int stopMilliSec);
+	void stop();
 	~SoundClip();
 
 private:
-	SoundClip();
 	void watch_thread();
 	void stop_player();
 
