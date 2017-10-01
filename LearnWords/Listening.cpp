@@ -6,6 +6,12 @@
 #include <fstream>
 #include <iostream>
 
+//===============================================================================================
+// 
+//===============================================================================================
+
+const int MAX_LINES_ON_PAGE = 20;
+const int SYMBOLS_IN_ONE_LINE = 80;
 
 struct KEY_WATCHED
 {
@@ -15,7 +21,21 @@ struct KEY_WATCHED
 	bool wasPressedLastTime;
 };
 
+struct PAGE_INTERVAL
+{
+	PAGE_INTERVAL() : firstLine(0), lastLine(0) {}
+
+	int firstLine;
+	int lastLine;
+};
+
 std::vector<KEY_WATCHED> keysWatched;
+std::vector<std::wstring> lines;
+std::vector<PAGE_INTERVAL> pageIntervals;
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 void init_vcode_getter()
 {
@@ -31,6 +51,10 @@ void init_vcode_getter()
 	kw.keyCode = VK_ESCAPE;
 	keysWatched.push_back(kw);
 }
+
+//===============================================================================================
+// 
+//===============================================================================================
 
 int get_vcode()
 {
@@ -48,9 +72,11 @@ int get_vcode()
 	}
 }
 
-std::vector<std::wstring> lines;
+//===============================================================================================
+// 
+//===============================================================================================
 
-bool ReadOneLine(FILE *File, std::wstring& Line) 
+bool ReadOneLine(FILE *File, std::wstring& Line)
 {
 	wchar_t LineOfChars[512];
 	wchar_t *res = fgetws(LineOfChars, 512, File);
@@ -65,7 +91,11 @@ bool ReadOneLine(FILE *File, std::wstring& Line)
 		return false;
 }
 
-void load_rim_texts(const std::wstring& fullFileName) 
+//===============================================================================================
+// 
+//===============================================================================================
+
+void load_rim_texts(const std::wstring& fullFileName)
 {
 	FILE *file;
 	std::wstring line;
@@ -82,40 +112,72 @@ void load_rim_texts(const std::wstring& fullFileName)
 
 	fclose(file);
 }
-void calc_first_last_lines(int selectedN, int addLinesNum, int* firstLine, int* lastLine)
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+void fill_page_intervals()
 {
-	*firstLine = selectedN - addLinesNum;
-	*firstLine = clamp_min(*firstLine, 0);
-	*lastLine = *firstLine + addLinesNum*2;
-	*lastLine = clamp_max(*lastLine, (int)(lines.size()) - 1);
+	PAGE_INTERVAL interval;
+	int linesUsed = 0;
+	int firstLine = 0;
+
+	for (int i=0; i<lines.size(); ++i)
+	{
+		const auto& line = lines[i];
+
+		int linesUsedByCarrentLine = 2 + line.length() / SYMBOLS_IN_ONE_LINE;
+		linesUsed += linesUsedByCarrentLine;
+		if (linesUsed > MAX_LINES_ON_PAGE)
+		{
+			linesUsed = linesUsedByCarrentLine;
+			interval.firstLine = firstLine;
+			interval.lastLine = i - 1;
+			firstLine = i;
+			pageIntervals.push_back(interval);
+		}
+	}
+	interval.firstLine = firstLine;
+	interval.lastLine = lines.size() - 1;
+	pageIntervals.push_back(interval);
 }
 
-const int THRESHOLD_TO_SWITCH_TO_3_LINE = 900;
+//===============================================================================================
+// 
+//===============================================================================================
 
 void draw_current_texts(int selectedN)
 {
-	int firstLine = 0;
-	int lastLine = 0;
-	calc_first_last_lines(selectedN, 2, &firstLine, &lastLine);
-	int symbolsInLines = 0;
-	for (int i = firstLine; i <= lastLine; ++i)
-		symbolsInLines += lines[i].length();
-	 if (symbolsInLines > THRESHOLD_TO_SWITCH_TO_3_LINE)
-		calc_first_last_lines(selectedN, 1, &firstLine, &lastLine);
-	 for (int i = firstLine; i <= lastLine; ++i)
+	PAGE_INTERVAL workingInterval;
+
+	for (const auto& interval : pageIntervals)
+	{
+		if (selectedN >= interval.firstLine && selectedN <= interval.lastLine)
+		{
+			workingInterval = interval;
+			break;
+		}
+	}
+
+	 for (int i = workingInterval.firstLine; i <= workingInterval.lastLine; ++i)
 	 {
 		 if (i == selectedN)
-			std::wcout << L"===> " << lines[i] << std::endl;
+			std::wcout << L"=> " << lines[i] << std::endl;
 		 else
 			 std::wcout << lines[i] << std::endl;
 	 }
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
 
 void listening()
 {
 	init_vcode_getter();
 	load_rim_texts(L"C:\\Dimka\\MyLims\\Eng.lim");
+	fill_page_intervals();
 
 	std::vector<int> timeSamples;
 	timeSamples.push_back(0);
@@ -129,13 +191,12 @@ void listening()
 
 	std::string fullFileName = "C:\\tmp\\0.wav";
 	SoundClip clip;
-	int n = 6;
+	int n = 0;
 
 	while (true)
 	{
 		clear_console_screen();
 		draw_current_texts(n);
-		std::cout << n << std::endl;
 
 		int key = get_vcode();
 		if (key == VK_ESCAPE)
