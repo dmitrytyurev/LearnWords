@@ -175,7 +175,7 @@ void draw_current_texts(int selectedN)
 	 for (int i = workingInterval.firstLine; i <= workingInterval.lastLine; ++i)
 	 {
 		 if (i == selectedN)
-			std::wcout << L"=> " << lines[i] << std::endl;
+			std::wcout << L"=" << lines[i] << std::endl;
 		 else
 			 std::wcout << lines[i] << std::endl;
 	 }
@@ -216,12 +216,12 @@ void listening()
 	
 	std::string fullFileName = "C:\\tmp\\0.wav";
 	SoundClip clip;
-	int n = 0;
+	int n = -1;
 
 	while (true)
 	{
 		clear_console_screen();
-		draw_current_texts(n);
+		draw_current_texts(n == -1 ? 0 : n);
 
 		int key = get_vcode();
 		if (key == VK_ESCAPE)
@@ -232,6 +232,8 @@ void listening()
 
 		if (key == VK_UP)
 		{
+			if (n == -1)
+				n = 0;
 			clip.play(fullFileName, timeSamples[n].startTime, timeSamples[n].stopTime);
 		}
 
