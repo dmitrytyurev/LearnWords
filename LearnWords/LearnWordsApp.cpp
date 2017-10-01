@@ -257,15 +257,19 @@ void LearnWordsApp::process(int argc, char* argv[])
 	std::srand((unsigned)get_time());
 	srand((int)get_time());
 
-	if (argc != 2)
+	if (argc != 3)
 	{
 		//puts("Ussage:");
 		//puts("LearnWords.exe [path to base file]\n");
 		//return 0;
 		_fullFileName = "C:\\Dimka\\LearnWords\\dima_to_learn.txt";
+		_fullRimPath = "C:\\tmp\\";
 	}
 	else
+	{
 		_fullFileName = argv[1];
+		_fullRimPath = argv[2];
+	}
 	FileOperate::load_from_file(_fullFileName.c_str(), &_wordsOnDisk);
 	//	wordsOnDisk.export_for_google_doc();
 
@@ -296,7 +300,7 @@ void LearnWordsApp::process(int argc, char* argv[])
 			_learnNew.learn_forgotten(_freezedTime, &_additionalCheck);
 			break;
 		case '4':
-			listening("C:\\tmp\\");
+			listening(_fullRimPath);
 			break;
 		case '5':
 			_additionalCheck.additional_check(_freezedTime, _fullFileName);
