@@ -8,6 +8,7 @@ void _cdecl exit_msg(char *text, ...);
 char getch_filtered();  // »гнорирует код -32 (встречаетс€, например, у стрелок)
 void clear_console_screen(char fill = ' ');
 int enter_number_from_console();
+bool if_dir_exists(const std::string& dirName);
 
 //===============================================================================================
 // 

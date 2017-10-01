@@ -129,3 +129,18 @@ int enter_number_from_console()
 	sscanf_s(buffer, "%d", &number);
 	return number;
 }
+//===============================================================================================
+// 
+//===============================================================================================
+
+bool if_dir_exists(const std::string& dirName)
+{
+	DWORD ftyp = GetFileAttributesA(dirName.c_str());
+	if (ftyp == INVALID_FILE_ATTRIBUTES)
+		return false;  //something is wrong with your path!
+
+	if (ftyp & FILE_ATTRIBUTE_DIRECTORY)
+		return true;   // this is a directory!
+
+	return false;    // this is not a directory!
+}

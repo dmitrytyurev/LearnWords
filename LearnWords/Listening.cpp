@@ -60,6 +60,10 @@ void init_vcode_getter()
 	keysWatched.push_back(kw);
 	kw.keyCode = VK_ESCAPE;
 	keysWatched.push_back(kw);
+	kw.keyCode = VK_PRIOR;
+	keysWatched.push_back(kw);
+	kw.keyCode = VK_NEXT;
+	keysWatched.push_back(kw);
 }
 
 //===============================================================================================
@@ -107,6 +111,7 @@ bool ReadOneLine(FILE *File, std::wstring& Line)
 
 void load_rim_texts(const std::string& fullFileName)
 {
+	lines.clear();
 	std::wstring fullFileNameW(fullFileName.begin(), fullFileName.end());
 
 	FILE *file;
@@ -131,6 +136,7 @@ void load_rim_texts(const std::string& fullFileName)
 
 void fill_page_intervals()
 {
+	pageIntervals.clear();
 	PAGE_INTERVAL interval;
 	int linesUsed = 0;
 	int firstLine = 0;
@@ -187,6 +193,7 @@ void draw_current_texts(int selectedN)
 
 void load_time_intervals(const std::string& fullFileNameStarts, const std::string& fullFileNameEnds)
 {
+	timeSamples.clear();
 	std::ifstream file(fullFileNameStarts);
 	std::ifstream file2(fullFileNameEnds);
 	if (file.is_open() && file2.is_open())
@@ -207,55 +214,111 @@ void load_time_intervals(const std::string& fullFileNameStarts, const std::strin
 // 
 //===============================================================================================
 
-void listening(const std::string& rimFolder)
+std::string get_vol_str(int vol)
 {
-	init_vcode_getter();
-	load_rim_texts(rimFolder + "Eng.lim");
-	fill_page_intervals();
-	load_time_intervals(rimFolder + "SPos.lim", rimFolder + "EPos.lim");
+	std::string strVol = "0000";
 	
-	std::string fullFileName = rimFolder + "0.wav";
-	SoundClip clip;
-	int n = -1;
+	int n = 1000;
+	for (int i = 0; i < 4; ++i)
+	{
+		strVol[i] = vol / n + '0';
+		vol -= vol / n * n;
+		n /= 10;
+	}
+
+	return strVol;
+}
+
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+int calc_vols_num(const std::string& rimFolder)
+{
+	int volN = 1;
 
 	while (true)
 	{
-		clear_console_screen();
-		draw_current_texts(n == -1 ? 0 : n);
-
-		int key = get_vcode();
-		if (key == VK_ESCAPE)
-		{
-			getch_filtered();
-			return;
-		}
-
-		if (key == VK_UP)
-		{
-			if (n == -1)
-				n = 0;
-			clip.play(fullFileName, timeSamples[n].startTime, timeSamples[n].stopTime);
-		}
-
-		if (key == VK_LEFT && n > 0)
-		{
-			--n;
-			clip.play(fullFileName, timeSamples[n].startTime, timeSamples[n].stopTime);
-		}
-
-		if (key == VK_RIGHT && n < int(timeSamples.size()) - 1)
-		{
-			++n;
-			clip.play(fullFileName, timeSamples[n].startTime, timeSamples[n].stopTime);
-		}
-
-		if (key == VK_DOWN)
-		{
-			clip.stop();
-		}
-
-//		printf("%d\n", key);
+		if (!if_dir_exists(rimFolder + get_vol_str(volN)))
+			break;
+		++volN;
 	}
+
+	return volN - 1;
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+void listening(const std::string& rimFolder)
+{
+	init_vcode_getter();
+	int volCurrent = 1;
+	int volTotal = calc_vols_num(rimFolder);
 	
+	while (true)
+	{
+		load_rim_texts(rimFolder + get_vol_str(volCurrent) + "\\Eng.lim");
+		fill_page_intervals();
+		load_time_intervals(rimFolder + get_vol_str(volCurrent) + "\\SPos.lim", rimFolder + get_vol_str(volCurrent) + "\\EPos.lim");
+
+		std::string fullFileName = rimFolder + get_vol_str(volCurrent) + "\\0.wav";
+		SoundClip clip;
+		int n = -1;
+
+		while (true)
+		{
+			clear_console_screen();
+			std::cout << "[" << volCurrent << "\\" << volTotal << "]" << std::endl;
+			draw_current_texts(n == -1 ? 0 : n);
+
+			int key = get_vcode();
+			if (key == VK_ESCAPE)
+			{
+				getch_filtered();
+				return;
+			}
+
+			if (key == VK_UP)
+			{
+				if (n == -1)
+					n = 0;
+				clip.play(fullFileName, timeSamples[n].startTime, timeSamples[n].stopTime);
+			}
+
+			if (key == VK_LEFT && n > 0)
+			{
+				--n;
+				clip.play(fullFileName, timeSamples[n].startTime, timeSamples[n].stopTime);
+			}
+
+			if (key == VK_RIGHT && n < int(timeSamples.size()) - 1)
+			{
+				++n;
+				clip.play(fullFileName, timeSamples[n].startTime, timeSamples[n].stopTime);
+			}
+
+			if (key == VK_DOWN)
+			{
+				clip.stop();
+			}
+
+			if (key == VK_PRIOR  &&  volCurrent > 1)
+			{
+				--volCurrent;
+				break;
+			}
+
+			if (key == VK_NEXT  &&  volCurrent < volTotal)
+			{
+				++volCurrent;
+				break;
+			}
+
+			//		printf("%d\n", key);
+		}
+	}
 }
 
