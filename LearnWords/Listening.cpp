@@ -207,14 +207,14 @@ void load_time_intervals(const std::string& fullFileNameStarts, const std::strin
 // 
 //===============================================================================================
 
-void listening()
+void listening(const std::string& rimFolder)
 {
 	init_vcode_getter();
-	load_rim_texts("C:/Dimka/MyLims/Eng.lim");
+	load_rim_texts(rimFolder + "Eng.lim");
 	fill_page_intervals();
-	load_time_intervals("C:/Dimka/MyLims/SPos.lim", "C:/Dimka/MyLims/EPos.lim");
+	load_time_intervals(rimFolder + "SPos.lim", rimFolder + "EPos.lim");
 	
-	std::string fullFileName = "C:\\tmp\\0.wav";
+	std::string fullFileName = rimFolder + "0.wav";
 	SoundClip clip;
 	int n = -1;
 

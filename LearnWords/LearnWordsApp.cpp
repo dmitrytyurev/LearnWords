@@ -11,7 +11,7 @@ const static int WORDS_LEARNED_GOOD_THRESHOLD = 14;
 float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 1, 1, 2, 3, 3, 4, 5, 7, 10, 14, 20, 25, 35, 50, 70, 90,  100, 120 };
 float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 1, 1, 3, 4, 4, 5, 6, 9, 12, 16, 23, 28, 40, 60, 80, 100, 120, 150 };
 
-void listening();
+void listening(const std::string& rimFolder);
 
 //===============================================================================================
 //
@@ -296,7 +296,7 @@ void LearnWordsApp::process(int argc, char* argv[])
 			_learnNew.learn_forgotten(_freezedTime, &_additionalCheck);
 			break;
 		case '4':
-			listening();
+			listening("C:\\tmp\\");
 			break;
 		case '5':
 			_additionalCheck.additional_check(_freezedTime, _fullFileName);
