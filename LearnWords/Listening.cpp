@@ -105,12 +105,14 @@ bool ReadOneLine(FILE *File, std::wstring& Line)
 // 
 //===============================================================================================
 
-void load_rim_texts(const std::wstring& fullFileName)
+void load_rim_texts(const std::string& fullFileName)
 {
+	std::wstring fullFileNameW(fullFileName.begin(), fullFileName.end());
+
 	FILE *file;
 	std::wstring line;
 
-	_wfopen_s(&file, fullFileName.c_str(), L"r,ccs=UTF-16LE");
+	_wfopen_s(&file, fullFileNameW.c_str(), L"r,ccs=UTF-16LE");
 
 	while (!feof(file) && !ferror(file)) 
 	{
@@ -208,7 +210,7 @@ void load_time_intervals(const std::string& fullFileNameStarts, const std::strin
 void listening()
 {
 	init_vcode_getter();
-	load_rim_texts(L"C:/Dimka/MyLims/Eng.lim");
+	load_rim_texts("C:/Dimka/MyLims/Eng.lim");
 	fill_page_intervals();
 	load_time_intervals("C:/Dimka/MyLims/SPos.lim", "C:/Dimka/MyLims/EPos.lim");
 	
