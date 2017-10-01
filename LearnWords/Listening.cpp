@@ -29,9 +29,19 @@ struct PAGE_INTERVAL
 	int lastLine;
 };
 
+struct SAMPLE_INTERVAL
+{
+	SAMPLE_INTERVAL() : startTime(0), stopTime(0) {}
+
+	int startTime;
+	int stopTime;
+};
+
+
 std::vector<KEY_WATCHED> keysWatched;
 std::vector<std::wstring> lines;
 std::vector<PAGE_INTERVAL> pageIntervals;
+std::vector<SAMPLE_INTERVAL> timeSamples;
 
 //===============================================================================================
 // 
@@ -123,7 +133,7 @@ void fill_page_intervals()
 	int linesUsed = 0;
 	int firstLine = 0;
 
-	for (int i=0; i<lines.size(); ++i)
+	for (int i=0; i<(int)lines.size(); ++i)
 	{
 		const auto& line = lines[i];
 
@@ -173,22 +183,35 @@ void draw_current_texts(int selectedN)
 // 
 //===============================================================================================
 
+void load_time_intervals(const std::string& fullFileNameStarts, const std::string& fullFileNameEnds)
+{
+	std::ifstream file(fullFileNameStarts);
+	std::ifstream file2(fullFileNameEnds);
+	if (file.is_open() && file2.is_open())
+	{
+		std::string strStart;
+		std::string strStop;
+		while (std::getline(file, strStart) && std::getline(file2, strStop))
+		{
+			SAMPLE_INTERVAL interval;
+			interval.startTime = std::stoi(strStart);
+			interval.stopTime  = std::stoi(strStop);
+			timeSamples.push_back(interval);
+		}
+	}
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
+
 void listening()
 {
 	init_vcode_getter();
-	load_rim_texts(L"C:\\Dimka\\MyLims\\Eng.lim");
+	load_rim_texts(L"C:/Dimka/MyLims/Eng.lim");
 	fill_page_intervals();
-
-	std::vector<int> timeSamples;
-	timeSamples.push_back(0);
-	timeSamples.push_back(1210);
-	timeSamples.push_back(4000);
-	timeSamples.push_back(6435);
-	timeSamples.push_back(9704);
-	timeSamples.push_back(12855);
-	timeSamples.push_back(15855);
-	timeSamples.push_back(17369);
-
+	load_time_intervals("C:/Dimka/MyLims/SPos.lim", "C:/Dimka/MyLims/EPos.lim");
+	
 	std::string fullFileName = "C:\\tmp\\0.wav";
 	SoundClip clip;
 	int n = 0;
@@ -204,19 +227,19 @@ void listening()
 
 		if (key == VK_UP)
 		{
-			clip.play(fullFileName, timeSamples[n], timeSamples[n + 1]);
+			clip.play(fullFileName, timeSamples[n].startTime, timeSamples[n].stopTime);
 		}
 
 		if (key == VK_LEFT && n > 0)
 		{
 			--n;
-			clip.play(fullFileName, timeSamples[n], timeSamples[n + 1]);
+			clip.play(fullFileName, timeSamples[n].startTime, timeSamples[n].stopTime);
 		}
 
-		if (key == VK_RIGHT && n < int(timeSamples.size()) - 2)
+		if (key == VK_RIGHT && n < int(timeSamples.size()) - 1)
 		{
 			++n;
-			clip.play(fullFileName, timeSamples[n], timeSamples[n + 1]);
+			clip.play(fullFileName, timeSamples[n].startTime, timeSamples[n].stopTime);
 		}
 
 		if (key == VK_DOWN)
