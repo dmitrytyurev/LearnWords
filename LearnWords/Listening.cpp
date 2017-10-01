@@ -223,7 +223,10 @@ void listening()
 
 		int key = get_vcode();
 		if (key == VK_ESCAPE)
+		{
+			getch_filtered();
 			return;
+		}
 
 		if (key == VK_UP)
 		{

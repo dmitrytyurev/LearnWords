@@ -11,6 +11,8 @@ const static int WORDS_LEARNED_GOOD_THRESHOLD = 14;
 float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 1, 1, 2, 3, 3, 4, 5, 7, 10, 14, 20, 25, 35, 50, 70, 90,  100, 120 };
 float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 1, 1, 3, 4, 4, 5, 6, 9, 12, 16, 23, 28, 40, 60, 80, 100, 120, 150 };
 
+void listening();
+
 //===============================================================================================
 //
 //===============================================================================================
@@ -111,7 +113,6 @@ int LearnWordsApp::main_menu_choose_mode()
 	if (prevWordsLearnedGood > 0)
 		deltaWordsLearnedGood = wordsLearnedGood - prevWordsLearnedGood;
 	prevWordsLearnedGood = wordsLearnedGood;
-	printf("Выучено слов: %d, из них хорошо: %d (%d)", wordsLearnedTotal, wordsLearnedGood, deltaWordsLearnedGood);
 
 	int mainQueueLen = 0;
 	int mainQueueSkipLoopCount = 0;
@@ -123,15 +124,18 @@ int LearnWordsApp::main_menu_choose_mode()
 	if (prevSkipLoopCount > 0)
 		deltaSkipLoopCount = mainQueueSkipLoopCount - prevSkipLoopCount;
 	prevSkipLoopCount = mainQueueSkipLoopCount;
-	printf("  Рандомный повтор: Основн=%d (из них skip=%d (%d)), Быстрая=%d ", mainQueueLen, mainQueueSkipLoopCount, deltaSkipLoopCount, fastQueueLen);
 
 	printf("\n");
 	printf("\n");
 	printf("1. Выучить новые слова\n");
-	printf("2. Подучить забытое [%d]\n", (int)_forgottenWordsIndices.size());
-	printf("3. Дополнительная проверка [N]\n");
-	printf("4. Обязательная проверка  [%d+~%d]\n", wordsTimeToRepeatNum, int(wordsTimeToRepeatNum * _mandatoryCheck.calc_additional_word_probability(wordsTimeToRepeatNum)));
+	printf("2. Ежедневный повтор  [%d+~%d]\n", wordsTimeToRepeatNum, int(wordsTimeToRepeatNum * _mandatoryCheck.calc_additional_word_probability(wordsTimeToRepeatNum)));
+	printf("3. Подучить забытое [%d]\n", (int)_forgottenWordsIndices.size());
+	printf("4. Аудирование\n");
+	printf("5. Повторить больше слов\n");
 	printf("\n\n");
+
+	printf("Выучено слов: %d, из них хорошо: %d (%d)\n", wordsLearnedTotal, wordsLearnedGood, deltaWordsLearnedGood);
+//	printf("  Рандомный повтор: Основн=%d (из них skip=%d (%d)), Быстрая=%d ", mainQueueLen, mainQueueSkipLoopCount, deltaSkipLoopCount, fastQueueLen);
 
 	for (const auto& index : _forgottenWordsIndices)
 	{
@@ -142,7 +146,7 @@ int LearnWordsApp::main_menu_choose_mode()
 	while (true)
 	{
 		char c = getch_filtered();
-		if (c == 27 || c == '1' || c == '2' || c == '3' || c == '4')  // 27 - Esc
+		if (c == 27 || c == '1' || c == '2' || c == '3' || c == '4' || c == '5')  // 27 - Esc
 			return c;
 		//		printf("%d\n", c);
 	}
@@ -286,13 +290,16 @@ void LearnWordsApp::process(int argc, char* argv[])
 			_learnNew.learn_new(_freezedTime, &_additionalCheck);
 			break;
 		case '2':
-			_learnNew.learn_forgotten(_freezedTime, &_additionalCheck);
+			_mandatoryCheck.mandatory_check(_freezedTime, &_additionalCheck, MAX_RIGHT_REPEATS_GLOBAL_N, _fullFileName);
 			break;
 		case '3':
-			_additionalCheck.additional_check(_freezedTime, _fullFileName);
+			_learnNew.learn_forgotten(_freezedTime, &_additionalCheck);
 			break;
 		case '4':
-			_mandatoryCheck.mandatory_check(_freezedTime, &_additionalCheck, MAX_RIGHT_REPEATS_GLOBAL_N, _fullFileName);
+			listening();
+			break;
+		case '5':
+			_additionalCheck.additional_check(_freezedTime, _fullFileName);
 			break;
 		default:
 			break;
