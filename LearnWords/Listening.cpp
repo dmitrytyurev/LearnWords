@@ -64,6 +64,9 @@ void init_vcode_getter()
 	keysWatched.push_back(kw);
 	kw.keyCode = VK_NEXT;
 	keysWatched.push_back(kw);
+
+	for (auto& kw : keysWatched)
+		GetAsyncKeyState(kw.keyCode);
 }
 
 //===============================================================================================
