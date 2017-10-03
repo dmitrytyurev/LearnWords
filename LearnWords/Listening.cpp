@@ -356,26 +356,26 @@ void listening(const std::string& rimFolder)
 				return;
 			}
 
-			if (key == VK_UP)
+			if (key == VK_RIGHT)
 			{
 				if (n == -1)
 					n = 0;
 				clip.play(fullFileName, timeSamples[n].startTime, timeSamples[n].stopTime);
 			}
 
-			if (key == VK_LEFT && n > 0)
+			if (key == VK_UP && n > 0)
 			{
 				--n;
 				clip.play(fullFileName, timeSamples[n].startTime, timeSamples[n].stopTime);
 			}
 
-			if (key == VK_RIGHT && n < int(timeSamples.size()) - 1)
+			if (key == VK_DOWN && n < int(timeSamples.size()) - 1)
 			{
 				++n;
 				clip.play(fullFileName, timeSamples[n].startTime, timeSamples[n].stopTime);
 			}
 
-			if (key == VK_DOWN)
+			if (key == VK_LEFT)
 			{
 				clip.stop();
 			}
