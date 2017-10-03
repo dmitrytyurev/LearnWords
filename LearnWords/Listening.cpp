@@ -39,7 +39,7 @@ struct SAMPLE_INTERVAL
 
 
 std::vector<KEY_WATCHED> keysWatched;
-std::vector<std::wstring> lines;
+std::vector<std::string> lines;
 std::vector<PAGE_INTERVAL> pageIntervals;
 std::vector<SAMPLE_INTERVAL> timeSamples;
 
@@ -93,7 +93,7 @@ int get_vcode()
 // 
 //===============================================================================================
 
-bool ReadOneLine(FILE *File, std::wstring& Line)
+bool ReadOneLineW(FILE *File, std::wstring& Line)
 {
 	wchar_t LineOfChars[512];
 	wchar_t *res = fgetws(LineOfChars, 512, File);
@@ -112,25 +112,97 @@ bool ReadOneLine(FILE *File, std::wstring& Line)
 // 
 //===============================================================================================
 
-void load_rim_texts(const std::string& fullFileName)
+bool ReadOneLineA(FILE *File, std::string& Line)
+{
+	char LineOfChars[512];
+	char *res = fgets(LineOfChars, 512, File);
+
+	if (res)
+	{
+		Line.clear();
+		Line.append(LineOfChars);
+		return true;
+	}
+	else
+		return false;
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+void load_rim_texts_w(const std::string& fullFileName)
 {
 	lines.clear();
 	std::wstring fullFileNameW(fullFileName.begin(), fullFileName.end());
 
 	FILE *file;
-	std::wstring line;
+	std::wstring linew;
 
 	_wfopen_s(&file, fullFileNameW.c_str(), L"r,ccs=UTF-16LE");
 
 	while (!feof(file) && !ferror(file)) 
 	{
-		bool isSucces = ReadOneLine(file, line);
+		bool isSucces = ReadOneLineW(file, linew);
 		if (!isSucces)
 			break;
+
+		std::string line(linew.begin(), linew.end());
 		lines.push_back(line);
 	}
 
 	fclose(file);
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+void load_rim_texts_a(const std::string& fullFileName)
+{
+	lines.clear();
+
+	FILE *file;
+	std::string line;
+
+	fopen_s(&file, fullFileName.c_str(), "r"); // , L"r,ccs=UTF-16LE");
+
+	while (!feof(file) && !ferror(file))
+	{
+		bool isSucces = ReadOneLineA(file, line);
+		if (!isSucces)
+			break;
+
+		lines.push_back(line);
+	}
+
+	fclose(file);
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+void load_rim_texts(const std::string& fullFileName)
+{
+	std::ifstream file(fullFileName.c_str(), std::ios::in | std::ios::binary);
+
+	if (!file.is_open())
+		exit_msg("Error opening file %s\n", fullFileName.c_str());
+
+	char ch1 = 0;
+	char ch2 = 0;
+	if (file.eof())
+		exit_msg("Error reading file %s\n", fullFileName.c_str());
+
+	file.get(ch1);
+	file.get(ch2);
+	file.close();
+
+	if (ch1 == -1 && ch2 == -2)
+		load_rim_texts_w(fullFileName);
+	else
+		load_rim_texts_a(fullFileName);
 }
 
 //===============================================================================================
@@ -184,9 +256,9 @@ void draw_current_texts(int selectedN)
 	 for (int i = workingInterval.firstLine; i <= workingInterval.lastLine; ++i)
 	 {
 		 if (i == selectedN)
-			std::wcout << L"=" << lines[i] << std::endl;
+			std::cout << "=" << lines[i] << std::endl;
 		 else
-			 std::wcout << lines[i] << std::endl;
+			 std::cout << lines[i] << std::endl;
 	 }
 }
 
