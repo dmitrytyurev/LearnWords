@@ -294,7 +294,7 @@ void LearnWordsApp::process(int argc, char* argv[])
 			_learnNew.learn_new(_freezedTime, &_additionalCheck);
 			break;
 		case '2':
-			_mandatoryCheck.mandatory_check(_freezedTime, &_additionalCheck, MAX_RIGHT_REPEATS_GLOBAL_N, _fullFileName);
+			_mandatoryCheck.mandatory_check(_freezedTime, &_additionalCheck, _fullFileName);
 			break;
 		case '3':
 			_learnNew.learn_forgotten(_freezedTime, &_additionalCheck);
@@ -311,3 +311,13 @@ void LearnWordsApp::process(int argc, char* argv[])
 	}
 }
 
+//===============================================================================================
+// 
+//===============================================================================================
+
+void LearnWordsApp::fill_rightAnswersNum(WordsData::WordInfo& w)
+{
+	int newN = w.rightAnswersNum + 1;
+	clamp_max(&newN, MAX_RIGHT_REPEATS_GLOBAL_N);
+	w.rightAnswersNum = newN;
+}
