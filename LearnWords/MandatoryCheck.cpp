@@ -34,6 +34,18 @@ float MandatoryCheck::calc_additional_word_probability(int checkByTimeWordsNumbe
 // 
 //===============================================================================================
 
+int MandatoryCheck::calc_rightAnswersNum(WordsData::WordInfo& w, const int maxRightRepeats)
+{
+	int newN = w.rightAnswersNum + 1;
+	newN = std::min(newN, maxRightRepeats);
+	return newN;
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+
 void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAdditionalCheck, const int maxRightRepeats, const std::string& fullFileName)
 {
 	enum class FromWhatSource
@@ -131,14 +143,13 @@ void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAddit
 				{
 					pAdditionalCheck->put_word_to_end_of_random_repeat_queue_common(w);
 					LearnWordsApp::RandScopePart randScopePart = LearnWordsApp::RandScopePart::LOWER_PART;
-					w.rightAnswersNum += 1;
 					if (isQuickAnswer)
 					{
 						randScopePart = LearnWordsApp::RandScopePart::HI_PART;
 						w.isNeedSkipOneRandomLoop = true;
 					}
 
-					w.rightAnswersNum = std::min(w.rightAnswersNum, maxRightRepeats);
+					w.rightAnswersNum = calc_rightAnswersNum(w, maxRightRepeats);
 					_learnWordsApp->fill_dates_and_save(w, freezedTime, randScopePart);
 				}
 				else
