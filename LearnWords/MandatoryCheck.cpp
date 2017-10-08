@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #define NOMINMAX
+#include <Windows.h>
 #include <vector>
 #include <algorithm>
 #include <chrono>
@@ -139,7 +140,14 @@ void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAddit
 						w.isNeedSkipOneRandomLoop = true;
 					}
 
+int keep = w.rightAnswersNum;
 					_learnWordsApp->fill_rightAnswersNum(w);
+if (w.rightAnswersNum - keep > 1)
+{
+	clear_console_screen();
+	printf("Moved to %d!\n", w.rightAnswersNum - keep);
+	Sleep(3000);
+}
 					_learnWordsApp->fill_dates_and_save(w, freezedTime, randScopePart);
 				}
 				else
