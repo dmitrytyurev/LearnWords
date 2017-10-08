@@ -335,7 +335,8 @@ void listening(const std::string& rimFolder)
 	init_vcode_getter();
 	int volCurrent = 1;
 	int volTotal = calc_vols_num(rimFolder);
-	
+	bool startsNow = false;
+
 	while (true)
 	{
 		load_rim_texts(rimFolder + get_vol_str(volCurrent) + "\\Eng.lim");
@@ -352,7 +353,13 @@ void listening(const std::string& rimFolder)
 			std::cout << "[" << volCurrent << "\\" << volTotal << "]" << std::endl;
 			draw_current_texts(n == -1 ? 0 : n);
 
-			int key = get_vcode();
+			int key = 0;
+			if (startsNow)
+			{
+				startsNow = false;
+				goto m3;
+			}
+			key = get_vcode();
 			if (key == VK_ESCAPE)
 			{
 				getch_filtered();
@@ -366,16 +373,29 @@ void listening(const std::string& rimFolder)
 				clip.play(fullFileName, timeSamples[n].startTime, timeSamples[n].stopTime);
 			}
 
-			if (key == VK_UP && n > 0)
+			if (key == VK_UP)
 			{
-				--n;
-				clip.play(fullFileName, timeSamples[n].startTime, timeSamples[n].stopTime);
+				if (n > 0)
+				{
+					--n;
+					clip.play(fullFileName, timeSamples[n].startTime, timeSamples[n].stopTime);
+				}
+				else
+					goto m2;
 			}
 
-			if (key == VK_DOWN && n < int(timeSamples.size()) - 1)
+			if (key == VK_DOWN)
 			{
-				++n;
-				clip.play(fullFileName, timeSamples[n].startTime, timeSamples[n].stopTime);
+m3:				if (n < int(timeSamples.size()) - 1)
+				{
+					++n;
+					clip.play(fullFileName, timeSamples[n].startTime, timeSamples[n].stopTime);
+				}
+				else
+				{
+					startsNow = true;
+					goto m1;
+				}
 			}
 
 			if (key == VK_LEFT)
@@ -383,16 +403,23 @@ void listening(const std::string& rimFolder)
 				clip.stop();
 			}
 
-			if (key == VK_PRIOR  &&  volCurrent > 1)
+			if (key == VK_PRIOR)
 			{
-				--volCurrent;
-				break;
+m2:				if (volCurrent > 1)
+				{
+					--volCurrent;
+					break;
+				}
 			}
 
-			if (key == VK_NEXT  &&  volCurrent < volTotal)
+			if (key == VK_NEXT)
 			{
-				++volCurrent;
-				break;
+				startsNow = false;
+m1:				if (volCurrent < volTotal)
+				{
+					++volCurrent;
+					break;
+				}
 			}
 
 			//		printf("%d\n", key);
