@@ -10,7 +10,7 @@
 // 
 //===============================================================================================
 
-const int MAX_LINES_ON_PAGE = 20;
+const int MAX_LINES_ON_PAGE = 30;
 const int SYMBOLS_IN_ONE_LINE = 80;
 
 struct KEY_WATCHED
@@ -244,8 +244,10 @@ void draw_current_texts(int selectedN)
 {
 	PAGE_INTERVAL workingInterval;
 
-	for (const auto& interval : pageIntervals)
+	int i = 0;
+	for (; i<(int)pageIntervals.size(); ++i)
 	{
+		const auto& interval = pageIntervals[i];
 		if (selectedN >= interval.firstLine && selectedN <= interval.lastLine)
 		{
 			workingInterval = interval;
@@ -253,13 +255,14 @@ void draw_current_texts(int selectedN)
 		}
 	}
 
-	 for (int i = workingInterval.firstLine; i <= workingInterval.lastLine; ++i)
-	 {
-		 if (i == selectedN)
-			std::cout << "=" << lines[i] << std::endl;
-		 else
-			 std::cout << lines[i] << std::endl;
-	 }
+	std::cout << "[" << i+1 << "/" << pageIntervals.size() << "]" << std::endl;
+	for (int i = workingInterval.firstLine; i <= workingInterval.lastLine; ++i)
+	{
+		if (i == selectedN)
+		std::cout << "=" << lines[i] << std::endl;
+	 else
+		 std::cout << lines[i] << std::endl;
+	}
 }
 
 //===============================================================================================
