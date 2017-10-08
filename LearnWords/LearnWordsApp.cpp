@@ -326,7 +326,7 @@ void LearnWordsApp::fill_rightAnswersNum(WordsData::WordInfo& w)
 		int i = 1;
 		for (; i <= MAX_RIGHT_REPEATS_GLOBAL_N; ++i)
 		{
-			if (notTestedTimeInterval >= addDaysMin[i] * SECONDS_IN_DAY && notTestedTimeInterval <= addDaysMax[i] * SECONDS_IN_DAY)
+			if (notTestedTimeInterval <= addDaysMax[i] * SECONDS_IN_DAY)
 				break;
 		}
 		++i;
