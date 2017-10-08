@@ -110,12 +110,22 @@ inline bool is_symbol(unsigned int c)
 //===============================================================================================
 
 template<class T>
-const T& clamp_min(const T& v, const T& lo)
+void clamp_min(T* v, const T& lo)
 {
-	if (v < lo)
-		return lo;
-	else
-		return v;
+	if (*v < lo)
+		*v = lo;
+}
+
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+template<class T>
+void clamp_max(T* v, const T& hi)
+{
+	if (*v > hi)
+		*v = hi;
 }
 
 //===============================================================================================
@@ -123,28 +133,13 @@ const T& clamp_min(const T& v, const T& lo)
 //===============================================================================================
 
 template<class T>
-const T& clamp_max(const T& v, const T& hi)
+void clamp_minmax(T* v, const T& lo, const T& hi)
 {
-	if (v > hi)
-		return hi;
+	assert(hi >= lo);
+
+	if (*v < lo)
+		*v = lo;
 	else
-		return v;
-}
-
-//===============================================================================================
-// 
-//===============================================================================================
-
-template<class T>
-const T& clamp_minmax(const T& v, const T& lo, const T& hi)
-{
-	assert(lo <= hi);
-
-	if (v < lo)
-		return lo;
-	else
-		if (v > hi)
-			return hi;
-		else
-			return v;
+		if (*v > hi)
+			*v = hi;
 }

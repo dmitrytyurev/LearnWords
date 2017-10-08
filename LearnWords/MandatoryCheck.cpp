@@ -37,7 +37,7 @@ float MandatoryCheck::calc_additional_word_probability(int checkByTimeWordsNumbe
 int MandatoryCheck::calc_rightAnswersNum(WordsData::WordInfo& w, const int maxRightRepeats)
 {
 	int newN = w.rightAnswersNum + 1;
-	newN = std::min(newN, maxRightRepeats);
+	clamp_max(&newN, maxRightRepeats);
 	return newN;
 }
 
