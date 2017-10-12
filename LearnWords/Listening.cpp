@@ -259,7 +259,7 @@ void draw_current_texts(int selectedN)
 	for (int i = workingInterval.firstLine; i <= workingInterval.lastLine; ++i)
 	{
 		if (i == selectedN)
-		std::cout << "=" << lines[i] << std::endl;
+		std::cout << "===> " << lines[i] << std::endl;
 	 else
 		 std::cout << lines[i] << std::endl;
 	}
