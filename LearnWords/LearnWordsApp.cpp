@@ -323,15 +323,18 @@ void LearnWordsApp::fill_rightAnswersNum(WordsData::WordInfo& w)
 	if (w.cantRandomTestedAfter) // Если слово проверили после длинного перерыва, то попробуем продвинуть rightAnswersNum сильнее, чем на 1
 	{
 		int notTestedTimeInterval = int(_freezedTime - w.cantRandomTestedAfter); // Оценка сверху интервала, в течении которого слово точно не проверялось - ни обязательной проверкой, ни случайной
-		int i = 1;
-		for (; i <= MAX_RIGHT_REPEATS_GLOBAL_N; ++i)
+		if (notTestedTimeInterval / SECONDS_IN_DAY > 7)
 		{
-			if (notTestedTimeInterval <= addDaysMax[i] * SECONDS_IN_DAY)
-				break;
-		}
-		++i;
-		clamp_max(&i, MAX_RIGHT_REPEATS_GLOBAL_N);
+			int i = 1;
+			for (; i <= MAX_RIGHT_REPEATS_GLOBAL_N; ++i)
+			{
+				if (notTestedTimeInterval <= addDaysMax[i] * SECONDS_IN_DAY)
+					break;
+			}
+			++i;
+			clamp_max(&i, MAX_RIGHT_REPEATS_GLOBAL_N);
 
-		w.rightAnswersNum = std::max(w.rightAnswersNum, i);
+			w.rightAnswersNum = std::max(w.rightAnswersNum, i);
+		}
 	}
 }
