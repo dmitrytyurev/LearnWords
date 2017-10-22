@@ -1,8 +1,8 @@
 #pragma once
 #include <vector>
+#include "WordsData.h"
 
 struct LearnWordsApp;
-struct WordsData;
 
 struct Listening
 {
@@ -31,7 +31,7 @@ struct Listening
 	};
 
 	Listening(LearnWordsApp* learnWordsApp, WordsData* pWordsData) : _learnWordsApp(learnWordsApp), _pWordsData(pWordsData) {}
-	void listening(const std::string& rimFolder);
+	void listening(std::string rimFolder);
 
 	void init_vcode_getter();
 	int get_vcode();

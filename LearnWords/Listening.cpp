@@ -12,6 +12,8 @@
 const int MAX_LINES_ON_PAGE = 30;
 const int SYMBOLS_IN_ONE_LINE = 80;
 const int VK_KEY_M = 77;
+const int VK_KEY_OPEN_BRACKET = 0xdb;
+const int VK_KEY_CLOSE_BRACKET = 0xdd;
 
 //===============================================================================================
 // 
@@ -35,6 +37,10 @@ void Listening::init_vcode_getter()
 	kw.keyCode = VK_NEXT;
 	keysWatched.push_back(kw);
 	kw.keyCode = VK_KEY_M;
+	keysWatched.push_back(kw);
+	kw.keyCode = VK_KEY_OPEN_BRACKET;
+	keysWatched.push_back(kw);
+	kw.keyCode = VK_KEY_CLOSE_BRACKET;
 	keysWatched.push_back(kw);
 
 	for (auto& kw : keysWatched)
@@ -305,22 +311,23 @@ int Listening::calc_vols_num(const std::string& rimFolder)
 // 
 //===============================================================================================
 
-void Listening::listening(const std::string& rimFolder)
+void Listening::listening(std::string rimFolder)
 {
 	init_vcode_getter();
 	int volCurrent = 1;
-	int volTotal = calc_vols_num(rimFolder);
 	bool startsNow = false;
+	int keepedTextN = -1;
+	int n = -1;
 
 	while (true)
 	{
+		int volTotal = calc_vols_num(rimFolder);
 		load_rim_texts(rimFolder + get_vol_str(volCurrent) + "\\Eng.lim");
 		fill_page_intervals();
 		load_time_intervals(rimFolder + get_vol_str(volCurrent) + "\\SPos.lim", rimFolder + get_vol_str(volCurrent) + "\\EPos.lim");
 
 		std::string fullFileName = rimFolder + get_vol_str(volCurrent) + "\\0.wav";
 		SoundClip clip;
-		int n = -1;
 
 		while (true)
 		{
@@ -383,6 +390,7 @@ m3:				if (n < int(timeSamples.size()) - 1)
 m2:				if (volCurrent > 1)
 				{
 					--volCurrent;
+					n = -1;
 					break;
 				}
 			}
@@ -393,12 +401,44 @@ m2:				if (volCurrent > 1)
 m1:				if (volCurrent < volTotal)
 				{
 					++volCurrent;
+					n = -1;
 					break;
 				}
 			}
 
 			if (key == VK_KEY_M)
 			{
+				WordsData::ListeningTextToKeep lttk;
+				lttk.rimFolder = rimFolder;
+				lttk.volumeN = volCurrent;
+				lttk.phraseN = n;
+				_pWordsData->_listeningTextsToKeep.push_back(lttk);
+			}
+
+			if (key == VK_KEY_OPEN_BRACKET)
+			{
+				if (keepedTextN > 0)
+				{
+					--keepedTextN;
+					const WordsData::ListeningTextToKeep& lttk = _pWordsData->_listeningTextsToKeep[keepedTextN];
+					rimFolder = lttk.rimFolder;
+					volCurrent = lttk.volumeN;
+					n = lttk.phraseN;
+					break;
+				}
+			}
+
+			if (key == VK_KEY_CLOSE_BRACKET)
+			{
+				if (keepedTextN < int(_pWordsData->_listeningTextsToKeep.size()) - 1)
+				{
+					++keepedTextN;
+					const WordsData::ListeningTextToKeep& lttk = _pWordsData->_listeningTextsToKeep[keepedTextN];
+					rimFolder = lttk.rimFolder;
+					volCurrent = lttk.volumeN;
+					n = lttk.phraseN;
+					break;
+				}
 			}
 		}
 	}
