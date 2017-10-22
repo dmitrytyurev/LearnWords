@@ -12,6 +12,7 @@
 
 const int MAX_LINES_ON_PAGE = 30;
 const int SYMBOLS_IN_ONE_LINE = 80;
+const int VK_KEY_M = 77;
 
 struct KEY_WATCHED
 {
@@ -63,6 +64,8 @@ void init_vcode_getter()
 	kw.keyCode = VK_PRIOR;
 	keysWatched.push_back(kw);
 	kw.keyCode = VK_NEXT;
+	keysWatched.push_back(kw);
+	kw.keyCode = VK_KEY_M;
 	keysWatched.push_back(kw);
 
 	for (auto& kw : keysWatched)
@@ -425,7 +428,9 @@ m1:				if (volCurrent < volTotal)
 				}
 			}
 
-			//		printf("%d\n", key);
+			if (key == VK_KEY_M)
+			{
+			}
 		}
 	}
 }

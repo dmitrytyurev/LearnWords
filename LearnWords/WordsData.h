@@ -39,6 +39,14 @@ struct WordsData
 		std::string word2;
 	};
 
+	struct ListeningTextToKeep
+	{
+		std::string path;  // Путь к лим-каталогу, из которого фраза
+		int volumeN;       // Номер главы (соответствует названию папки в лим-каталоге
+		int phraseN;       // Номер фразы в главе
+	};
+
 	std::vector<WordInfo> _words;
 	std::vector<CompareExcludePair> _compareExcludePairs;
+	std::vector<ListeningTextToKeep> _listeningTextsToKeep;
 };
