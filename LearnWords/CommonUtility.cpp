@@ -129,6 +129,7 @@ int enter_number_from_console()
 	sscanf_s(buffer, "%d", &number);
 	return number;
 }
+
 //===============================================================================================
 // 
 //===============================================================================================
@@ -144,3 +145,24 @@ bool if_dir_exists(const std::string& dirName)
 
 	return false;    // this is not a directory!
 }
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+void copy_to_clipboard(const std::string &s)
+{
+	OpenClipboard(0);
+	EmptyClipboard();
+	HGLOBAL hg = GlobalAlloc(GMEM_MOVEABLE, s.size());
+	if (!hg) {
+		CloseClipboard();
+		return;
+	}
+	memcpy(GlobalLock(hg), s.c_str(), s.size());
+	GlobalUnlock(hg);
+	SetClipboardData(CF_TEXT, hg);
+	CloseClipboard();
+	GlobalFree(hg);
+}
+

@@ -9,6 +9,7 @@ char getch_filtered();  // »гнорирует код -32 (встречаетс€, например, у стрелок)
 void clear_console_screen(char fill = ' ');
 int enter_number_from_console();
 bool if_dir_exists(const std::string& dirName);
+void copy_to_clipboard(const std::string &s);
 
 //===============================================================================================
 // 
