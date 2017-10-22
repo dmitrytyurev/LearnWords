@@ -5,10 +5,11 @@
 #include "AdditionalCheck.h"
 #include "MandatoryCheck.h"
 #include "LearnNew.h"
+#include "Listening.h"
 
 struct LearnWordsApp
 {
-	LearnWordsApp(): _additionalCheck(this, &_wordsOnDisk), _mandatoryCheck(this, &_wordsOnDisk), _learnNew(this, &_wordsOnDisk), _freezedTime(0) {}
+	LearnWordsApp(): _additionalCheck(this, &_wordsOnDisk), _mandatoryCheck(this, &_wordsOnDisk), _learnNew(this, &_wordsOnDisk), _listening(this, &_wordsOnDisk), _freezedTime(0) {}
 
 	enum class RandScopePart
 	{
@@ -48,5 +49,6 @@ struct LearnWordsApp
 	AdditionalCheck _additionalCheck;
 	MandatoryCheck  _mandatoryCheck;
 	LearnNew        _learnNew;
+	Listening       _listening;
 };
 

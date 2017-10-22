@@ -2,7 +2,6 @@
 #include "Listening.h"
 #include "SoundClip.h"
 #include "CommonUtility.h"
-#include <vector>
 #include <fstream>
 #include <iostream>
 
@@ -14,41 +13,11 @@ const int MAX_LINES_ON_PAGE = 30;
 const int SYMBOLS_IN_ONE_LINE = 80;
 const int VK_KEY_M = 77;
 
-struct KEY_WATCHED
-{
-	KEY_WATCHED() : keyCode(0), wasPressedLastTime(false) {}
-
-	int  keyCode;
-	bool wasPressedLastTime;
-};
-
-struct PAGE_INTERVAL
-{
-	PAGE_INTERVAL() : firstLine(0), lastLine(0) {}
-
-	int firstLine;
-	int lastLine;
-};
-
-struct SAMPLE_INTERVAL
-{
-	SAMPLE_INTERVAL() : startTime(0), stopTime(0) {}
-
-	int startTime;
-	int stopTime;
-};
-
-
-std::vector<KEY_WATCHED> keysWatched;
-std::vector<std::string> lines;
-std::vector<PAGE_INTERVAL> pageIntervals;
-std::vector<SAMPLE_INTERVAL> timeSamples;
-
 //===============================================================================================
 // 
 //===============================================================================================
 
-void init_vcode_getter()
+void Listening::init_vcode_getter()
 {
 	KEY_WATCHED kw;
 	kw.keyCode = VK_DOWN;
@@ -76,7 +45,7 @@ void init_vcode_getter()
 // 
 //===============================================================================================
 
-int get_vcode()
+int Listening::get_vcode()
 {
 	while (true)
 	{
@@ -96,7 +65,7 @@ int get_vcode()
 // 
 //===============================================================================================
 
-bool ReadOneLineW(FILE *File, std::wstring& Line)
+bool Listening::ReadOneLineW(FILE *File, std::wstring& Line)
 {
 	wchar_t LineOfChars[512];
 	wchar_t *res = fgetws(LineOfChars, 512, File);
@@ -115,7 +84,7 @@ bool ReadOneLineW(FILE *File, std::wstring& Line)
 // 
 //===============================================================================================
 
-bool ReadOneLineA(FILE *File, std::string& Line)
+bool Listening::ReadOneLineA(FILE *File, std::string& Line)
 {
 	char LineOfChars[512];
 	char *res = fgets(LineOfChars, 512, File);
@@ -134,7 +103,7 @@ bool ReadOneLineA(FILE *File, std::string& Line)
 // 
 //===============================================================================================
 
-void load_rim_texts_w(const std::string& fullFileName)
+void Listening::load_rim_texts_w(const std::string& fullFileName)
 {
 	lines.clear();
 	std::wstring fullFileNameW(fullFileName.begin(), fullFileName.end());
@@ -161,7 +130,7 @@ void load_rim_texts_w(const std::string& fullFileName)
 // 
 //===============================================================================================
 
-void load_rim_texts_a(const std::string& fullFileName)
+void Listening::load_rim_texts_a(const std::string& fullFileName)
 {
 	lines.clear();
 
@@ -186,7 +155,7 @@ void load_rim_texts_a(const std::string& fullFileName)
 // 
 //===============================================================================================
 
-void load_rim_texts(const std::string& fullFileName)
+void Listening::load_rim_texts(const std::string& fullFileName)
 {
 	std::ifstream file(fullFileName.c_str(), std::ios::in | std::ios::binary);
 
@@ -212,7 +181,7 @@ void load_rim_texts(const std::string& fullFileName)
 // 
 //===============================================================================================
 
-void fill_page_intervals()
+void Listening::fill_page_intervals()
 {
 	pageIntervals.clear();
 	PAGE_INTERVAL interval;
@@ -243,7 +212,7 @@ void fill_page_intervals()
 // 
 //===============================================================================================
 
-void draw_current_texts(int selectedN)
+void Listening::draw_current_texts(int selectedN)
 {
 	PAGE_INTERVAL workingInterval;
 
@@ -275,7 +244,7 @@ void draw_current_texts(int selectedN)
 // 
 //===============================================================================================
 
-void load_time_intervals(const std::string& fullFileNameStarts, const std::string& fullFileNameEnds)
+void Listening::load_time_intervals(const std::string& fullFileNameStarts, const std::string& fullFileNameEnds)
 {
 	timeSamples.clear();
 	std::ifstream file(fullFileNameStarts);
@@ -298,7 +267,7 @@ void load_time_intervals(const std::string& fullFileNameStarts, const std::strin
 // 
 //===============================================================================================
 
-std::string get_vol_str(int vol)
+std::string Listening::get_vol_str(int vol)
 {
 	std::string strVol = "0000";
 	
@@ -318,7 +287,7 @@ std::string get_vol_str(int vol)
 // 
 //===============================================================================================
 
-int calc_vols_num(const std::string& rimFolder)
+int Listening::calc_vols_num(const std::string& rimFolder)
 {
 	int volN = 1;
 
@@ -336,7 +305,7 @@ int calc_vols_num(const std::string& rimFolder)
 // 
 //===============================================================================================
 
-void listening(const std::string& rimFolder)
+void Listening::listening(const std::string& rimFolder)
 {
 	init_vcode_getter();
 	int volCurrent = 1;
