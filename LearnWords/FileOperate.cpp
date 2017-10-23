@@ -70,6 +70,39 @@ void FileOperate::load_from_file(const char* fullFileName, WordsData* pWordsData
 
 	int parseIndex = 0;
 
+	// Читаем сохранённый позиции в аудировании
+	while (true)
+	{
+		WordsData::ListeningTextToKeep lttk;
+
+		lttk.rimFolder = load_string_from_array(buffer, &parseIndex);
+		if (lttk.rimFolder.length() == 0)         // При поиске начала строки был встречен конец файла (например, файл заканчивается пустой строкой)
+			exit_msg("Sintax error in word %s", lttk.rimFolder.c_str());
+
+		if (lttk.rimFolder == "Compare exclude pairs")
+			break;
+
+		while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
+			++parseIndex;
+		if (buffer[parseIndex] == 0 || buffer[parseIndex] == 0xd)
+			exit_msg("Sintax error in parameter %s", lttk.rimFolder.c_str());
+		lttk.volumeN = load_int_from_array(buffer, &parseIndex);
+
+		while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd && !is_digit(buffer[parseIndex]))
+			++parseIndex;
+		if (buffer[parseIndex] == 0 || buffer[parseIndex] == 0xd)
+			exit_msg("Sintax error in parameter %s", lttk.rimFolder.c_str());		lttk.phraseN = load_int_from_array(buffer, &parseIndex);
+
+		// Занести ListeningTextToKeep в вектор
+		pWordsData->_listeningTextsToKeep.push_back(lttk);
+
+		while (buffer[parseIndex] != 0 && buffer[parseIndex] != 0xd)
+			++parseIndex;
+
+		if (buffer[parseIndex] == 0)
+			exit_msg("Sintax error N96309892");
+	}
+
 	// Читаем пары исключений
 	while (true)
 	{
@@ -77,7 +110,7 @@ void FileOperate::load_from_file(const char* fullFileName, WordsData* pWordsData
 
 		cep.word1 = load_string_from_array(buffer, &parseIndex);
 		if (cep.word1.length() == 0)         // При поиске начала строки был встречен конец файла (например, файл заканчивается пустой строкой)
-			exit_msg("Sintax error in word %s", cep.word1.c_str());
+			exit_msg("Sintax error in parameter %s", cep.word1.c_str());
 
 		if (cep.word1 == "Main block")
 			break;
@@ -91,7 +124,7 @@ void FileOperate::load_from_file(const char* fullFileName, WordsData* pWordsData
 			++parseIndex;
 
 		if (buffer[parseIndex] == 0)
-			exit_msg("Sintax error in word");
+			exit_msg("Sintax error N86093486");
 	}
 
 	// Читаем основной блок слов
@@ -172,6 +205,16 @@ void FileOperate::save_to_file(const char* fullFileName, WordsData* pWordsData)
 	fopen_s(&f, fullFileName, "wt");
 	if (f == nullptr)
 		exit_msg("Can't create file %s\n", fullFileName);
+
+	for (const auto& e : pWordsData->_listeningTextsToKeep)
+	{
+		fprintf(f, "\"%s\" %d %d\n",
+			e.rimFolder.c_str(),
+			e.volumeN,
+			e.phraseN);
+	}
+
+	fprintf(f, "\"Compare exclude pairs\"\n");
 
 	for (const auto& e : pWordsData->_compareExcludePairs)
 	{

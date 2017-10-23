@@ -2,6 +2,7 @@
 #include "Listening.h"
 #include "SoundClip.h"
 #include "CommonUtility.h"
+#include "LearnWordsApp.h"
 #include <fstream>
 #include <iostream>
 
@@ -411,8 +412,9 @@ m1:				if (volCurrent < volTotal)
 				WordsData::ListeningTextToKeep lttk;
 				lttk.rimFolder = rimFolder;
 				lttk.volumeN = volCurrent;
-				lttk.phraseN = n;
+				lttk.phraseN = n == -1 ? 0 : n;
 				_pWordsData->_listeningTextsToKeep.push_back(lttk);
+				_learnWordsApp->save();
 			}
 
 			if (key == VK_KEY_OPEN_BRACKET)
