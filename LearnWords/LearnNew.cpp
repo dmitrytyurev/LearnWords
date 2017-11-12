@@ -132,7 +132,7 @@ void LearnNew::learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 				clear_console_screen();
 				printf("\n%s\n\n", w.word.c_str());
 				print_masked_translation(w.translation.c_str(), symbolsToShowNum);
-				printf("\n");
+				printf("\n\n  Стрелка вправо - Открывать по одной букве\n  Пробел -         Показать всё слово");
 
 				char c = 0;
 				do
@@ -140,12 +140,13 @@ void LearnNew::learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 					c = getch_filtered();
 					if (c == 27)
 						return;
-					if (c == 72)  // Стрелка вверх
+					if (c == ' ')  // Пробел - показать слово целиком
 					{
-						i3 = TIMES_TO_SHOW_A_WORD - 2;  // Сразу открыть слово, без плавного появления
+						if (i3 < TIMES_TO_SHOW_A_WORD - 2)
+							i3 = TIMES_TO_SHOW_A_WORD - 2;  // Сразу открыть слово, без плавного появления
 						break;
 					}
-				} while (c != ' ');
+				} while (c != 77);  // Стрелка вправо - открывать по одному символу
 			}
 		}
 	}
