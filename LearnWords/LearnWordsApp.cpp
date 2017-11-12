@@ -5,11 +5,11 @@
 
 
 const int QUICK_ANSWER_TIME_MS = 2900;             // Время быстрого ответа в миллисекундах
-const static int MAX_RIGHT_REPEATS_GLOBAL_N = 20;
+const static int MAX_RIGHT_REPEATS_GLOBAL_N = 32;
 const static int WORDS_LEARNED_GOOD_THRESHOLD = 14;
 
-float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 1, 1, 2, 3, 3, 4, 5, 7, 10, 14, 20, 25, 35, 50, 70, 90,  100, 120 };
-float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 1, 1, 3, 4, 4, 5, 6, 9, 12, 16, 23, 28, 40, 60, 80, 100, 120, 150 };
+float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 0.8f, 0.8f, 2, 3, 3, 4, 0.8f, 5, 0.8f, 7, 0.8f, 10, 0.8f, 14, 0.8f, 20, 0.8f, 25, 0.8f, 35, 0.8f, 50, 0.8f, 70, 0.8f, 90, 0.8f,  100, 0.8f, 120 };
+float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 0.8f, 0.8f, 3, 4, 4, 5, 0.8f, 6, 0.8f, 9, 0.8f, 12, 0.8f, 16, 0.8f, 23, 0.8f, 28, 0.8f, 40, 0.8f, 60, 0.8f, 80, 0.8f, 100, 0.8f, 120, 0.8f, 150 };
 
 //===============================================================================================
 //
@@ -315,24 +315,44 @@ void LearnWordsApp::process(int argc, char* argv[])
 
 void LearnWordsApp::fill_rightAnswersNum(WordsData::WordInfo& w)
 {
-	++w.rightAnswersNum;
-	clamp_max(&w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
-
-	if (w.cantRandomTestedAfter) // Если слово проверили после длинного перерыва, то попробуем продвинуть rightAnswersNum сильнее, чем на 1
+	// Если слово проверили после длинного перерыва, то попробуем продвинуть rightAnswersNum перед тем, как будет сделан его инкремент
+	if (w.cantRandomTestedAfter && addDaysMin[w.rightAnswersNum] > 5)
 	{
-		int notTestedTimeInterval = int(_freezedTime - w.cantRandomTestedAfter); // Оценка сверху интервала, в течении которого слово точно не проверялось - ни обязательной проверкой, ни случайной
-		if (notTestedTimeInterval / SECONDS_IN_DAY > 7)
+		int notTestedTimeInterval = int(_freezedTime - w.cantRandomTestedAfter); // Оценка снизу интервала, в течении которого слово точно не проверялось - ни обязательной проверкой, ни случайной
+		int i = MAX_RIGHT_REPEATS_GLOBAL_N;
+		while (true)
 		{
-			int i = 1;
-			for (; i <= MAX_RIGHT_REPEATS_GLOBAL_N; ++i)
+			if (addDaysMin[i] > 5 && notTestedTimeInterval > (addDaysMin[i] + 2) * SECONDS_IN_DAY)
 			{
-				if (notTestedTimeInterval <= addDaysMax[i] * SECONDS_IN_DAY)
-					break;
+				w.rightAnswersNum = i;
+				break;
 			}
-			++i;
-			clamp_max(&i, MAX_RIGHT_REPEATS_GLOBAL_N);
-
-			w.rightAnswersNum = std::max(w.rightAnswersNum, i);
+			if (--i <= w.rightAnswersNum)
+				break;
 		}
 	}
+
+	++w.rightAnswersNum;
+	clamp_max(&w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
 }
+
+//void LearnWordsApp::test()
+//{
+//	const int N_NUM = 3;
+//	int nVals[N_NUM] = {12, 14, 16};
+//
+//	const int TIME_NUM = 2;
+//	int timeVals[TIME_NUM] = {400, 600};
+//
+//	for (int ni = 0; ni<N_NUM; ++ni)
+//		for (int timi = 0; timi < TIME_NUM; ++timi)
+//		{
+//			WordsData::WordInfo w;
+//			w.rightAnswersNum = nVals[ni];
+//			w.cantRandomTestedAfter = _freezedTime - timeVals[timi] * 3600;
+//			fill_rightAnswersNum_new(w);
+//			printf("time=%d, n=%d nNew=%d\n", timeVals[timi], nVals[ni], w.rightAnswersNum);
+//		}
+//	exit(1);
+//}
+
