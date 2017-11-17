@@ -5,11 +5,11 @@
 
 
 const int QUICK_ANSWER_TIME_MS = 2900;             // Время быстрого ответа в миллисекундах
-const static int MAX_RIGHT_REPEATS_GLOBAL_N = 32;
+const static int MAX_RIGHT_REPEATS_GLOBAL_N = 41;
 const static int WORDS_LEARNED_GOOD_THRESHOLD = 14;
 
-float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 0.8f, 0.8f, 2, 3, 3, 4, 0.8f, 5, 0.8f, 7, 0.8f, 10, 0.8f, 14, 0.8f, 20, 0.8f, 25, 0.8f, 35, 0.8f, 50, 0.8f, 70, 0.8f, 90, 0.8f,  100, 0.8f, 120 };
-float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 0.8f, 0.8f, 3, 4, 4, 5, 0.8f, 6, 0.8f, 9, 0.8f, 12, 0.8f, 16, 0.8f, 23, 0.8f, 28, 0.8f, 40, 0.8f, 60, 0.8f, 80, 0.8f, 100, 0.8f, 120, 0.8f, 150 };
+float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 0.8f, 0.8f, 2, 2, 2, 3, 4, 0.8f, 4, 0.8f, 5, 0.8f, 7, 0.8f, 7, 0.8f, 10, 0.8f, 14, 0.8f, 14, 0.8f, 20, 0.8f, 25, 0.8f, 25, 0.8f, 35, 0.8f, 35, 0.8f, 40, 0.8f, 50, 0.8f, 70, 0.8f, 90 };
+float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 0.8f, 0.8f, 3, 3, 3, 4, 5, 0.8f, 5, 0.8f, 6, 0.8f, 9, 0.8f, 9, 0.8f, 12, 0.8f, 16, 0.8f, 16, 0.8f, 23, 0.8f, 28, 0.8f, 28, 0.8f, 40, 0.8f, 40, 0.8f, 50, 0.8f, 60, 0.8f, 80, 0.8f, 100};
 
 //===============================================================================================
 //
@@ -260,8 +260,8 @@ void LearnWordsApp::process(int argc, char* argv[])
 		//puts("Ussage:");
 		//puts("LearnWords.exe [path to base file]\n");
 		//return 0;
-		_fullFileName = "C:\\Dimka\\LearnWords\\dima_to_learn.txt";
-		_fullRimPath = "C:\\tmp\\";
+		_fullFileName = "C:\\Dimka\\yadisk\\LearnWords\\dima_to_learn.txt";
+		_fullRimPath = "C:\\Dimka\\MyLims\\40\\CNN\\CBSBenghaziProblem\\";
 	}
 	else
 	{
