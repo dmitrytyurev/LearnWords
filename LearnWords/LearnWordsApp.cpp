@@ -6,7 +6,7 @@
 
 const int QUICK_ANSWER_TIME_MS = 2900;             // ¬рем€ быстрого ответа в миллисекундах
 const static int MAX_RIGHT_REPEATS_GLOBAL_N = 41;
-const static int WORDS_LEARNED_GOOD_THRESHOLD = 14;
+const static int WORDS_LEARNED_GOOD_THRESHOLD = 40; // „исло дней в addDaysMin, по которому выбираетс€ индекс, чтобы считать слова хорошо изученными
 
 float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 0.8f, 0.8f, 2, 2, 2, 3, 4, 0.8f, 4, 0.8f, 5, 0.8f, 7, 0.8f, 7, 0.8f, 10, 0.8f, 14, 0.8f, 14, 0.8f, 20, 0.8f, 25, 0.8f, 25, 0.8f, 35, 0.8f, 35, 0.8f, 40, 0.8f, 50, 0.8f, 70, 0.8f, 90 };
 float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 0.8f, 0.8f, 3, 3, 3, 4, 5, 0.8f, 5, 0.8f, 6, 0.8f, 9, 0.8f, 9, 0.8f, 12, 0.8f, 16, 0.8f, 16, 0.8f, 23, 0.8f, 28, 0.8f, 28, 0.8f, 40, 0.8f, 40, 0.8f, 50, 0.8f, 60, 0.8f, 80, 0.8f, 100};
@@ -98,12 +98,20 @@ int LearnWordsApp::main_menu_choose_mode()
 	int wordsByLevel[MAX_RIGHT_REPEATS_GLOBAL_N + 1];
 	recalc_stats(_freezedTime, &wordsTimeToRepeatNum, wordsByLevel);
 
+	int wordsLearnGoodIndex = 0;   // Ќайти индекс, больше которого имеют хорошо изученные слова
+	for (int i = 1; i < MAX_RIGHT_REPEATS_GLOBAL_N + 1; ++i)
+		if (addDaysMin[i] >= WORDS_LEARNED_GOOD_THRESHOLD)
+		{
+			wordsLearnGoodIndex = i;
+			break;
+		}
+	
 	int wordsLearnedTotal = 0;
 	int wordsLearnedGood = 0;
 	for (int i = 1; i < MAX_RIGHT_REPEATS_GLOBAL_N + 1; ++i)
 	{
 		wordsLearnedTotal += wordsByLevel[i];
-		if (i >= WORDS_LEARNED_GOOD_THRESHOLD)
+		if (i >= wordsLearnGoodIndex)
 			wordsLearnedGood += wordsByLevel[i];
 	}
 	static int prevWordsLearnedGood;
