@@ -82,7 +82,7 @@ void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAddit
 				}
 
 int keep = w.rightAnswersNum;
-					_learnWordsApp->fill_rightAnswersNum(w);
+				_learnWordsApp->fill_rightAnswersNum(w, isQuickAnswer);
 if (w.rightAnswersNum - keep > 1)
 {
 	clear_console_screen();
