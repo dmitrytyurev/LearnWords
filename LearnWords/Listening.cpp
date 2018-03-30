@@ -239,7 +239,7 @@ void Listening::draw_current_texts(int selectedN)
 	{
 		if (i == selectedN)
 		{
-			std::cout << "===> " << lines[i] << std::endl;
+			std::cout << "     ===> " << lines[i] << std::endl;
 			copy_to_clipboard(lines[i]);
 		}
 		else
