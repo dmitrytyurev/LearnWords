@@ -71,6 +71,7 @@ void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAddit
 			ctwm.process_user_input(c);
 			if (c == 27)
 				return;                              //FIXME!!! внутри условий ниже много повторов!
+			int keepPrevRightAnswersNum = 0;
 			if (c == 72)  // Стрелка вверх
 			{
 				pAdditionalCheck->put_word_to_end_of_random_repeat_queue_common(w);
@@ -94,6 +95,7 @@ if (w.rightAnswersNum - keep > 1)
 			else
 				if (c == 80) // Стрелка вниз
 				{
+					keepPrevRightAnswersNum = w.rightAnswersNum;
 					_learnWordsApp->add_forgotten(wordsToRepeat[i]);
 					_learnWordsApp->set_word_as_just_learned(w);
 					_learnWordsApp->fill_dates_and_save(w, freezedTime, LearnWordsApp::RandScopePart::ALL);
@@ -108,7 +110,7 @@ if (w.rightAnswersNum - keep > 1)
 					}
 					else
 						continue;
-			logger("Check by time, word = %s, ===== %s, key=%d, time = %s", w.word.c_str(), fullFileName.c_str(), c, get_time_in_text(time(nullptr)));
+			logger("Check by time, word = %s, ===== %s, key=%d, PrevRightAnswersNum=%d, time = %s", w.word.c_str(), fullFileName.c_str(), c, keepPrevRightAnswersNum, get_time_in_text(time(nullptr)));
 			break;
 		}
 	}

@@ -12,6 +12,8 @@ const int CAN_SKIP_IF_LESS_DAYS = 10;  // При быстром правильном ответе слову мо
 float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 0.8f, 0.8f, 2, 2, 3, 4, 0.8f, 4, 5, 7, 0.8f, 7, 0.8f, 10, 0.8f, 14, 0.8f, 14, 0.8f, 20, 0.8f, 25, 0.8f, 25, 0.8f, 35, 0.8f, 35, 0.8f, 40, 0.8f, 50, 0.8f, 70, 0.8f, 90 };
 float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 0.8f, 0.8f, 3, 3, 4, 5, 0.8f, 5, 6, 9, 0.8f, 9, 0.8f, 12, 0.8f, 16, 0.8f, 16, 0.8f, 23, 0.8f, 28, 0.8f, 28, 0.8f, 40, 0.8f, 40, 0.8f, 50, 0.8f, 60, 0.8f, 80, 0.8f, 100};
 
+extern Log logger;
+
 //===============================================================================================
 //
 //===============================================================================================
@@ -141,6 +143,8 @@ int LearnWordsApp::main_menu_choose_mode()
 	printf("\n\n");
 
 	printf("Выучено слов: %d, из них хорошо: %d (%d)\n", wordsLearnedTotal, wordsLearnedGood, deltaWordsLearnedGood);
+	logger("Learnded and good: %d, %d, time = %s\n", wordsLearnedTotal, wordsLearnedGood, get_time_in_text(time(nullptr)));
+
 //	printf("  Рандомный повтор: Основн=%d (из них skip=%d (%d)), Быстрая=%d ", mainQueueLen, mainQueueSkipLoopCount, deltaSkipLoopCount, fastQueueLen);
 
 	for (const auto& index : _forgottenWordsIndices)
