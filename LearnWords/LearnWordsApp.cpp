@@ -95,7 +95,7 @@ void LearnWordsApp::reset_all_words_to_repeated(int rightAnswersToSet, float min
 
 int LearnWordsApp::main_menu_choose_mode()
 {
-	_additionalCheck.log_random_test_words(_freezedTime);
+//	_additionalCheck.log_random_test_words(_freezedTime);
 
 	int wordsTimeToRepeatNum = 0;
 	int wordsByLevel[MAX_RIGHT_REPEATS_GLOBAL_N + 1];
@@ -143,7 +143,7 @@ int LearnWordsApp::main_menu_choose_mode()
 	printf("\n\n");
 
 	printf("Выучено слов: %d, из них хорошо: %d (%d)\n", wordsLearnedTotal, wordsLearnedGood, deltaWordsLearnedGood);
-	logger("Learnded and good: %d, %d, time = %s\n", wordsLearnedTotal, wordsLearnedGood, get_time_in_text(time(nullptr)));
+	logger("Learned and good: %d, %d, time = %s", wordsLearnedTotal, wordsLearnedGood, get_time_in_text(time(nullptr)));
 
 //	printf("  Рандомный повтор: Основн=%d (из них skip=%d (%d)), Быстрая=%d ", mainQueueLen, mainQueueSkipLoopCount, deltaSkipLoopCount, fastQueueLen);
 
@@ -346,11 +346,11 @@ void LearnWordsApp::fill_rightAnswersNum(WordsData::WordInfo& w, bool isQuickAns
 
 	++w.rightAnswersNum;
 	clamp_max(&w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
-	if (isQuickAnswer && addDaysMax[w.rightAnswersNum] < CAN_SKIP_IF_LESS_DAYS)
-	{
-		++w.rightAnswersNum;
-		clamp_max(&w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
-	}
+//	if (isQuickAnswer && addDaysMax[w.rightAnswersNum] < CAN_SKIP_IF_LESS_DAYS)
+//	{
+//		++w.rightAnswersNum;
+//		clamp_max(&w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
+//	}
 }
 
 //void LearnWordsApp::test()
