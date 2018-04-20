@@ -136,7 +136,7 @@ int LearnWordsApp::main_menu_choose_mode()
 	printf("\n");
 	printf("\n");
 	printf("1. Выучить новые слова\n");
-	printf("2. Ежедневный повтор  [%d]\n", wordsTimeToRepeatNum);
+	printf("2. Ежедневный повтор  [%d+~%d]\n", wordsTimeToRepeatNum, int(wordsTimeToRepeatNum * _mandatoryCheck.calc_additional_word_probability(wordsTimeToRepeatNum)));
 	printf("3. Подучить забытое [%d]\n", (int)_forgottenWordsIndices.size());
 	printf("4. Аудирование\n");
 	printf("5. Повторить больше слов\n");
