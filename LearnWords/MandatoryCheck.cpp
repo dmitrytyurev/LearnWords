@@ -162,6 +162,7 @@ if (w.rightAnswersNum - keep > 1)
 			else
 				if (c == 80) // Стрелка вниз
 				{
+					keepPrevRightAnswersNum = w.rightAnswersNum;
 					if (wordsToRepeat[i]._fromWhatSource == FromWhatSource::CHECK_BY_TIME)
 					{
 						_learnWordsApp->add_forgotten(wordsToRepeat[i]._index);
@@ -194,7 +195,7 @@ if (w.rightAnswersNum - keep > 1)
 					}
 					else
 						continue;
-			logger("Check by time, word = %s, ===== %s, src=%d, key=%d, time = %s", w.word.c_str(), fullFileName.c_str(), wordsToRepeat[i]._fromWhatSource, c, get_time_in_text(time(nullptr)));
+			logger("Check by time, word = %s, ===== %s, src=%d, key=%d, PrevRightAnswersNum=%d, time = %s", w.word.c_str(), fullFileName.c_str(), wordsToRepeat[i]._fromWhatSource, c, keepPrevRightAnswersNum, get_time_in_text(time(nullptr)));
 			break;
 		}
 	}
