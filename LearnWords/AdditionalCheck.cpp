@@ -152,7 +152,7 @@ int AdditionalCheck::get_word_to_repeat(time_t freezedTime)
 void AdditionalCheck::put_word_to_end_of_random_repeat_queue_common(WordsData::WordInfo& w)
 {
 	w.randomTestIncID = calc_max_randomTestIncID(false) + 1;
-	logger("put rand common = %d\n", w.randomTestIncID);
+//	logger("put rand common = %d\n", w.randomTestIncID);
 	w.isInFastRandomQueue = false;
 	w.isNeedSkipOneRandomLoop = false;
 	w.cantRandomTestedBefore = 0;

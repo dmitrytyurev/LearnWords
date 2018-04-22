@@ -128,7 +128,7 @@ void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAddit
 			ctwm.process_user_input(c);
 			if (c == 27)
 				return;                              //FIXME!!! внутри условий ниже много повторов!
-			int keepPrevRightAnswersNum = 0;
+			int keepPrevRightAnswersNum = w.rightAnswersNum;
 			if (c == 72)  // Стрелка вверх
 			{
 				if (wordsToRepeat[i]._fromWhatSource == FromWhatSource::CHECK_BY_TIME)
@@ -162,7 +162,6 @@ if (w.rightAnswersNum - keep > 1)
 			else
 				if (c == 80) // Стрелка вниз
 				{
-					keepPrevRightAnswersNum = w.rightAnswersNum;
 					if (wordsToRepeat[i]._fromWhatSource == FromWhatSource::CHECK_BY_TIME)
 					{
 						_learnWordsApp->add_forgotten(wordsToRepeat[i]._index);
