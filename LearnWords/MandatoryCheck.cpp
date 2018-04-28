@@ -11,7 +11,7 @@
 #include "CloseTranslationWordsManager.h"
 #include "MandatoryCheck.h"
 
-const int RIGHT_ANSWERS_FALLBACK = 6;            // Номер шага, на который откатывается слово при check_by_time, если помним неуверенно
+const int RIGHT_ANSWERS_FALLBACK = 10;            // Номер шага, на который откатывается слово при check_by_time, если помним неуверенно
 extern Log logger;
 
 //===============================================================================================
