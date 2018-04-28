@@ -110,7 +110,7 @@ if (w.rightAnswersNum - keep > 1)
 						}
 						else
 						continue;
-			logger("Check by time, word = %s, ===== %s, key=%d, PrevRightAnswersNum=%d, time = %s", w.word.c_str(), fullFileName.c_str(), c, keepPrevRightAnswersNum, get_time_in_text(time(nullptr)));
+			logger("Check by time, word = %s, key=%d, PrevRightAnswersNum=%d, time = %s", w.word.c_str(), c, keepPrevRightAnswersNum, get_time_in_text(time(nullptr)));
 			break;
 		}
 	}
