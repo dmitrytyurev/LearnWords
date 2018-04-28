@@ -7,7 +7,6 @@
 const int QUICK_ANSWER_TIME_MS = 2900;             // Время быстрого ответа в миллисекундах
 const int MAX_RIGHT_REPEATS_GLOBAL_N = 81;
 const int WORDS_LEARNED_GOOD_THRESHOLD = 22; // Число дней в addDaysMin, по которому выбирается индекс, чтобы считать слова хорошо изученными
-const int CAN_SKIP_IF_LESS_DAYS = 10;  // При быстром правильном ответе слову можно сделать дополнительный инкремент, если его следующий повтор планировался не более, чем через это количество дней
 
 float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1];
 float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1];
@@ -363,30 +362,5 @@ void LearnWordsApp::fill_rightAnswersNum(WordsData::WordInfo& w, bool isQuickAns
 
 	++w.rightAnswersNum;
 	clamp_max(&w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
-//	if (isQuickAnswer && addDaysMax[w.rightAnswersNum] < CAN_SKIP_IF_LESS_DAYS)
-//	{
-//		++w.rightAnswersNum;
-//		clamp_max(&w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
-//	}
 }
-
-//void LearnWordsApp::test()
-//{
-//	const int N_NUM = 3;
-//	int nVals[N_NUM] = {12, 14, 16};
-//
-//	const int TIME_NUM = 2;
-//	int timeVals[TIME_NUM] = {400, 600};
-//
-//	for (int ni = 0; ni<N_NUM; ++ni)
-//		for (int timi = 0; timi < TIME_NUM; ++timi)
-//		{
-//			WordsData::WordInfo w;
-//			w.rightAnswersNum = nVals[ni];
-//			w.cantRandomTestedAfter = _freezedTime - timeVals[timi] * 3600;
-//			fill_rightAnswersNum_new(w);
-//			printf("time=%d, n=%d nNew=%d\n", timeVals[timi], nVals[ni], w.rightAnswersNum);
-//		}
-//	exit(1);
-//}
 
