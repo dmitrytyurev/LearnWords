@@ -5,14 +5,32 @@
 
 
 const int QUICK_ANSWER_TIME_MS = 2900;             // Время быстрого ответа в миллисекундах
-const int MAX_RIGHT_REPEATS_GLOBAL_N = 38;
-const int WORDS_LEARNED_GOOD_THRESHOLD = 25; // Число дней в addDaysMin, по которому выбирается индекс, чтобы считать слова хорошо изученными
+const int MAX_RIGHT_REPEATS_GLOBAL_N = 81;
+const int WORDS_LEARNED_GOOD_THRESHOLD = 22; // Число дней в addDaysMin, по которому выбирается индекс, чтобы считать слова хорошо изученными
 const int CAN_SKIP_IF_LESS_DAYS = 10;  // При быстром правильном ответе слову можно сделать дополнительный инкремент, если его следующий повтор планировался не более, чем через это количество дней
 
-float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 0.8f, 0.8f, 2, 2, 3, 4, 0.8f, 4, 5, 7, 0.8f, 7, 0.8f, 10, 0.8f, 14, 0.8f, 14, 0.8f, 20, 0.8f, 25, 0.8f, 25, 0.8f, 35, 0.8f, 35, 0.8f, 40, 0.8f, 50, 0.8f, 70, 0.8f, 90 };
-float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = { 0, 0.25f, 0.25f, 0.8f, 0.8f, 3, 3, 4, 5, 0.8f, 5, 6, 9, 0.8f, 9, 0.8f, 12, 0.8f, 16, 0.8f, 16, 0.8f, 23, 0.8f, 28, 0.8f, 28, 0.8f, 40, 0.8f, 40, 0.8f, 50, 0.8f, 60, 0.8f, 80, 0.8f, 100};
+float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1];
+float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1];
+float addDaysMinSrc [MAX_RIGHT_REPEATS_GLOBAL_N + 1] = {0, 0.25f, 0.25f, 0.25f, 0.25f, 0.25f, 1, 1, 1, 2, 2, 3, 3, 4, 1, 5, 1, 5, 1, 7, 1, 2, 9, 1, 3, 11, 1, 3, 14, 1, 3, 8, 17, 1, 3, 9, 20, 1, 3, 9, 23, 1, 3, 11, 27, 1, 3, 14, 35, 1, 3, 10, 18, 42, 1, 3, 10, 20, 50, 1, 3, 10, 25, 60, 1, 3, 10, 20, 35, 70, 1, 3, 10, 20, 40, 80, 1, 3, 10, 20, 45, 90};
+float addDaysDiffSrc[MAX_RIGHT_REPEATS_GLOBAL_N + 1] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 2, 0, 2, 0, 0, 2, 0, 0, 3, 0, 0, 3, 0, 0, 2, 3, 0, 0, 2, 3, 0, 0, 2, 3, 0, 0, 3, 3, 0, 0, 3, 3, 0, 0, 2, 3, 4, 0, 0, 2, 3, 4, 0, 0, 2, 3, 5, 0, 0, 2, 3, 4, 5, 0, 0, 2, 3, 4, 5, 0, 0, 2, 3, 4, 5};
 
 extern Log logger;
+
+//===============================================================================================
+//
+//===============================================================================================
+
+LearnWordsApp::LearnWordsApp(): _additionalCheck(this, &_wordsOnDisk), _mandatoryCheck(this, &_wordsOnDisk), _learnNew(this, &_wordsOnDisk), _listening(this, &_wordsOnDisk), _freezedTime(0) 
+{
+	for (int i = 0; i < MAX_RIGHT_REPEATS_GLOBAL_N + 1; ++i)
+	{
+		float t = addDaysMinSrc[i];
+		if (t >= 1)  
+			t -= 0.2f;
+		addDaysMin[i] = t;
+		addDaysMax[i] = t + addDaysDiffSrc[i];
+	}
+}
 
 //===============================================================================================
 //
@@ -283,9 +301,8 @@ void LearnWordsApp::process(int argc, char* argv[])
 	FileOperate::load_from_file(_fullFileName.c_str(), &_wordsOnDisk);
 	//	wordsOnDisk.export_for_google_doc();
 
-	//wordsOnDisk.reset_all_words_to_repeated(16, 2, 50, time(nullptr)); // Если давно не занимался. Если перед коррекцией уже выучил новые слова, то скопировать их назад после обработки этой ф-цией
-	//wordsOnDisk.save_to_file();
-	//return 0;
+	//FileOperate::save_to_file(_fullFileName.c_str(), &_wordsOnDisk);
+	//return;
 
 	while (true)
 	{

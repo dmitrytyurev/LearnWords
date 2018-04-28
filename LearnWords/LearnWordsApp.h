@@ -9,7 +9,7 @@
 
 struct LearnWordsApp
 {
-	LearnWordsApp(): _additionalCheck(this, &_wordsOnDisk), _mandatoryCheck(this, &_wordsOnDisk), _learnNew(this, &_wordsOnDisk), _listening(this, &_wordsOnDisk), _freezedTime(0) {}
+	LearnWordsApp();
 
 	enum class RandScopePart
 	{
