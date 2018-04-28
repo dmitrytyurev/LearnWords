@@ -24,7 +24,15 @@ void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAddit
 	_learnWordsApp->clear_forgotten();
 	clear_console_screen();
 
-	std::vector<int> wordsToRepeat;
+	struct WordToCheck
+	{
+		WordToCheck() : _index(0), _sortCoeff(0) {}
+		WordToCheck(int index) : _index(index), _sortCoeff(0) {}
+
+		int   _index;       // Индекс повторяемого слова в WordsOnDisk::_words
+		float _sortCoeff;   // Сортировочный коэффициент, если пора повторять больше слов, чем мы хотим сейчас повторять
+	};
+	std::vector<WordToCheck> wordsToRepeat;
 
 	// Выбрать слова для проверки, для которых подошло время проверки
 
@@ -32,15 +40,34 @@ void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAddit
 	{
 		WordsData::WordInfo& w = _pWordsData->_words[i];
 		if (w.dateOfRepeat != 0 && w.dateOfRepeat < freezedTime)
-			wordsToRepeat.push_back(i);
+			wordsToRepeat.push_back(WordToCheck(i));
+	}
+
+	// Если этих слов больше, чем нужно, то урезать число слов до необходимого
+
+	const int MAX_WORDS_TO_CHECK = 77;
+	if (wordsToRepeat.size() > MAX_WORDS_TO_CHECK)
+	{
+		for (int i = 0; i < (int)wordsToRepeat.size(); ++i)
+		{
+			WordsData::WordInfo& w = _pWordsData->_words[wordsToRepeat[i]._index];
+			int plannedRepeatInterval = (w.dateOfRepeat - w.cantRandomTestedAfter) * 2;;  // Запланированный интервал повтора
+			int lateRepeatInterval = int(freezedTime) - w.dateOfRepeat;  // На сколько просрочен повтор от запланированного времени
+			wordsToRepeat[i]._sortCoeff = lateRepeatInterval / (plannedRepeatInterval * 0.2f + 1);  // Чем больше коэффициент, тем раньше надо повторять слова
 		}
+		std::sort(wordsToRepeat.begin(), wordsToRepeat.end(), [](const WordToCheck& l, const WordToCheck& r)  { return l._sortCoeff > r._sortCoeff; });
+		wordsToRepeat.resize(MAX_WORDS_TO_CHECK);
+	}
+
+	// Перемешать выбранные слова
+
 	std::random_shuffle(wordsToRepeat.begin(), wordsToRepeat.end());
 
 	// Главный цикл проверки слов
 
 	for (int i = 0; i < (int)wordsToRepeat.size(); ++i)
 	{
-		WordsData::WordInfo& w = _pWordsData->_words[wordsToRepeat[i]];
+		WordsData::WordInfo& w = _pWordsData->_words[wordsToRepeat[i]._index];
 
 		clear_console_screen();
 		printf("\n\n===============================\n %s\n===============================\n", w.word.c_str());
@@ -64,7 +91,7 @@ void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAddit
 			_learnWordsApp->print_buttons_hints(w.translation, true);
 			printf("\n  Осталось: %d, Быстрый ответ = %d, rightAnswersNum=%d\n", (int)wordsToRepeat.size() - i - 1, int(isQuickAnswer), w.rightAnswersNum);
 
-			CloseTranslationWordsManager ctwm(_learnWordsApp, _pWordsData, wordsToRepeat[i]);
+			CloseTranslationWordsManager ctwm(_learnWordsApp, _pWordsData, wordsToRepeat[i]._index);
 			ctwm.print_close_words_by_translation();
 
 			c = getch_filtered();
@@ -96,14 +123,14 @@ if (w.rightAnswersNum - keep > 1)
 				if (c == 80) // Стрелка вниз
 				{
 					keepPrevRightAnswersNum = w.rightAnswersNum;
-					_learnWordsApp->add_forgotten(wordsToRepeat[i]);
+					_learnWordsApp->add_forgotten(wordsToRepeat[i]._index);
 						_learnWordsApp->set_word_as_just_learned(w);
 						_learnWordsApp->fill_dates_and_save(w, freezedTime, LearnWordsApp::RandScopePart::ALL);
 					}
 					else
 					if (c == 77) // Стрелка вправо (помним слово не очень уверенно)
 					{
-						_learnWordsApp->add_forgotten(wordsToRepeat[i]);
+						_learnWordsApp->add_forgotten(wordsToRepeat[i]._index);
 							w.rightAnswersNum = std::min(w.rightAnswersNum, RIGHT_ANSWERS_FALLBACK);
 							pAdditionalCheck->put_word_to_end_of_random_repeat_queue_fast(w, freezedTime);
 							_learnWordsApp->fill_dates_and_save(w, freezedTime, LearnWordsApp::RandScopePart::ALL);
