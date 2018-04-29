@@ -122,7 +122,6 @@ if (w.rightAnswersNum - keep > 1)
 				else
 				if (c == 80) // Стрелка вниз
 				{
-					keepPrevRightAnswersNum = w.rightAnswersNum;
 					_learnWordsApp->add_forgotten(wordsToRepeat[i]._index);
 						_learnWordsApp->set_word_as_just_learned(w);
 						_learnWordsApp->fill_dates_and_save(w, freezedTime, LearnWordsApp::RandScopePart::ALL);
