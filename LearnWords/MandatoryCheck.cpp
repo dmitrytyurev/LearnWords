@@ -11,6 +11,7 @@
 #include "CloseTranslationWordsManager.h"
 #include "MandatoryCheck.h"
 
+const int DOWN_ANSWERS_FALLBACK  = 6;             // Ќомер шага, на который откатываетс€ слово при check_by_time, если забыли слово
 const int RIGHT_ANSWERS_FALLBACK = 10;            // Ќомер шага, на который откатываетс€ слово при check_by_time, если помним неуверенно
 extern Log logger;
 
@@ -123,7 +124,8 @@ if (w.rightAnswersNum - keep > 1)
 				if (c == 80) // —трелка вниз
 				{
 					_learnWordsApp->add_forgotten(wordsToRepeat[i]._index);
-					_learnWordsApp->set_word_as_just_learned(w);
+					w.rightAnswersNum = std::min(w.rightAnswersNum, DOWN_ANSWERS_FALLBACK);
+					pAdditionalCheck->put_word_to_end_of_random_repeat_queue_fast(w, freezedTime);
 					_learnWordsApp->fill_dates_and_save(w, freezedTime, LearnWordsApp::RandScopePart::ALL);
 				}
 				else
