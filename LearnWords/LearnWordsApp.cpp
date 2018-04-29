@@ -343,23 +343,6 @@ void LearnWordsApp::process(int argc, char* argv[])
 
 void LearnWordsApp::fill_rightAnswersNum(WordsData::WordInfo& w, bool isQuickAnswer)
 {
-	// Если слово проверили после длинного перерыва, то попробуем продвинуть rightAnswersNum перед тем, как будет сделан его инкремент
-	if (w.cantRandomTestedAfter && addDaysMin[w.rightAnswersNum] > 5)
-	{
-		int notTestedTimeInterval = int(_freezedTime - w.cantRandomTestedAfter); // Оценка снизу интервала, в течении которого слово точно не проверялось - ни обязательной проверкой, ни случайной
-		int i = MAX_RIGHT_REPEATS_GLOBAL_N;
-		while (true)
-		{
-			if (addDaysMin[i] > 5 && notTestedTimeInterval > (addDaysMin[i] + 2) * SECONDS_IN_DAY)
-			{
-				w.rightAnswersNum = i;
-				break;
-			}
-			if (--i <= w.rightAnswersNum)
-				break;
-		}
-	}
-
 	++w.rightAnswersNum;
 	clamp_max(&w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
 }
