@@ -123,18 +123,18 @@ if (w.rightAnswersNum - keep > 1)
 				if (c == 80) // Стрелка вниз
 				{
 					_learnWordsApp->add_forgotten(wordsToRepeat[i]._index);
-						_learnWordsApp->set_word_as_just_learned(w);
-						_learnWordsApp->fill_dates_and_save(w, freezedTime, LearnWordsApp::RandScopePart::ALL);
-					}
-					else
+					_learnWordsApp->set_word_as_just_learned(w);
+					_learnWordsApp->fill_dates_and_save(w, freezedTime, LearnWordsApp::RandScopePart::ALL);
+				}
+				else
 					if (c == 77) // Стрелка вправо (помним слово не очень уверенно)
 					{
 						_learnWordsApp->add_forgotten(wordsToRepeat[i]._index);
-							w.rightAnswersNum = std::min(w.rightAnswersNum, RIGHT_ANSWERS_FALLBACK);
-							pAdditionalCheck->put_word_to_end_of_random_repeat_queue_fast(w, freezedTime);
-							_learnWordsApp->fill_dates_and_save(w, freezedTime, LearnWordsApp::RandScopePart::ALL);
-						}
-						else
+						w.rightAnswersNum = std::min(w.rightAnswersNum, RIGHT_ANSWERS_FALLBACK);
+						pAdditionalCheck->put_word_to_end_of_random_repeat_queue_fast(w, freezedTime);
+						_learnWordsApp->fill_dates_and_save(w, freezedTime, LearnWordsApp::RandScopePart::ALL);
+					}
+					else
 						continue;
 			logger("Check by time, word = %s, key=%d, PrevRightAnswersNum=%d, time = %s", w.word.c_str(), c, keepPrevRightAnswersNum, get_time_in_text(time(nullptr)));
 			break;
