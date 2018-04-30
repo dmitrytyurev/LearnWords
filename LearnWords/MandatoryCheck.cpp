@@ -19,6 +19,7 @@ extern Log logger;
 // 
 //===============================================================================================
 
+const int LAST_HOURS_REPEAT_NUM = 7;  // ≈сли на повтор слов мало, то добавим слова из повторЄнных за столько последних часов
 
 void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAdditionalCheck, const std::string& fullFileName)
 {
@@ -27,21 +28,25 @@ void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAddit
 
 	struct WordToCheck
 	{
-		WordToCheck() : _index(0), _sortCoeff(0) {}
-		WordToCheck(int index) : _index(index), _sortCoeff(0) {}
+		WordToCheck() : _index(0), _sortCoeff(0), _ifRecentlyRepeated(false) {}
+		WordToCheck(int index) : _index(index), _sortCoeff(0), _ifRecentlyRepeated(false) {}
+		WordToCheck(int index, bool ifRecentlyRepeated) : _index(index), _sortCoeff(0), _ifRecentlyRepeated(ifRecentlyRepeated) {}
 
 		int   _index;       // »ндекс повтор€емого слова в WordsOnDisk::_words
 		float _sortCoeff;   // —ортировочный коэффициент, если пора повтор€ть больше слов, чем мы хотим сейчас повтор€ть
+		bool  _ifRecentlyRepeated;  // true, если слово повтор€лось за последние LAST_HOURS_REPEAT_NUM часов
 	};
 	std::vector<WordToCheck> wordsToRepeat;
 
 	// ¬ыбрать слова дл€ проверки, дл€ которых подошло врем€ проверки
 
+	auto ifTimeToRepeat = [](WordsData::WordInfo& w, time_t freezedTime) { return w.dateOfRepeat != 0 && w.dateOfRepeat < freezedTime; };
+
 	for (int i = 0; i < (int)_pWordsData->_words.size(); ++i)
 	{
 		WordsData::WordInfo& w = _pWordsData->_words[i];
-		if (w.dateOfRepeat != 0 && w.dateOfRepeat < freezedTime)
-			wordsToRepeat.push_back(WordToCheck(i));
+		if (ifTimeToRepeat(w, freezedTime))
+			wordsToRepeat.emplace_back(WordToCheck(i));
 	}
 
 	// ≈сли этих слов больше, чем нужно, то урезать число слов до необходимого
@@ -59,6 +64,45 @@ void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAddit
 		std::sort(wordsToRepeat.begin(), wordsToRepeat.end(), [](const WordToCheck& l, const WordToCheck& r)  { return l._sortCoeff > r._sortCoeff; });
 		wordsToRepeat.resize(MAX_WORDS_TO_CHECK);
 	}
+	else
+		if (wordsToRepeat.size() < MAX_WORDS_TO_CHECK)  // ≈сли слов наоборот меньше, то добавить
+		{
+			auto ifRepeatedRecently = [](WordsData::WordInfo& w, time_t freezedTime) { return freezedTime - w.calcPrevRepeatTime() < 3600 * LAST_HOURS_REPEAT_NUM; };
+
+			for (int i = 0; i < (int)_pWordsData->_words.size(); ++i)   // —начала добавл€ем слова, которые повтор€ли за последние LAST_HOURS_REPEAT_NUM часов
+			{
+				WordsData::WordInfo& w = _pWordsData->_words[i];
+
+				if (!ifTimeToRepeat(w, freezedTime) && ifRepeatedRecently(w, freezedTime))
+				{
+logger("Add from recently: %s, time from repeat: %d\n", w.word.c_str(), freezedTime - w.calcPrevRepeatTime());
+					wordsToRepeat.emplace_back(WordToCheck(i, true));
+					if (wordsToRepeat.size() == MAX_WORDS_TO_CHECK)
+						break;
+				}
+			}
+
+			if (wordsToRepeat.size() < MAX_WORDS_TO_CHECK)  // ≈сли слов по-прежнему не хватает, то добавл€ем слова, врем€ повтора которых придЄт через NN часов
+			{
+				const int PRELIMINARY_CHECK_HOURS = 24;  // —лова, которые надо будет провер€ть через столько часов добавим в проверку сейчас, если слов не хватает
+
+				for (int i = 0; i < (int)_pWordsData->_words.size(); ++i)
+				{
+					WordsData::WordInfo& w = _pWordsData->_words[i];
+
+					if (!ifTimeToRepeat(w, freezedTime) && !ifRepeatedRecently(w, freezedTime))
+					{
+						if (w.dateOfRepeat != 0 && w.dateOfRepeat < freezedTime + 3600 * PRELIMINARY_CHECK_HOURS)
+						{
+logger("Add from future: %s, time to repeat: %d\n", w.word.c_str(), w.dateOfRepeat - freezedTime);
+							wordsToRepeat.emplace_back(WordToCheck(i));
+							if (wordsToRepeat.size() == MAX_WORDS_TO_CHECK)
+								break;
+						}
+					}
+				}
+			}
+		}
 
 	// ѕеремешать выбранные слова
 
@@ -102,25 +146,18 @@ void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAddit
 			int keepPrevRightAnswersNum = w.rightAnswersNum;
 			if (c == 72)  // —трелка вверх
 			{
-					pAdditionalCheck->put_word_to_end_of_random_repeat_queue_common(w);
-					LearnWordsApp::RandScopePart randScopePart = LearnWordsApp::RandScopePart::LOWER_PART;
-					if (isQuickAnswer)
-					{
-						randScopePart = LearnWordsApp::RandScopePart::HI_PART;
-						w.isNeedSkipOneRandomLoop = true;
-					}
-
-int keep = w.rightAnswersNum;
-				_learnWordsApp->fill_rightAnswersNum(w, isQuickAnswer);
-if (w.rightAnswersNum - keep > 1)
-{
-	clear_console_screen();
-	printf("Moved to %d!\n", w.rightAnswersNum - keep);
-	Sleep(1200);
-}
-					_learnWordsApp->fill_dates_and_save(w, freezedTime, randScopePart);
+				if (wordsToRepeat[i]._ifRecentlyRepeated == false)
+					_learnWordsApp->fill_rightAnswersNum(w);
+				pAdditionalCheck->put_word_to_end_of_random_repeat_queue_common(w);
+				LearnWordsApp::RandScopePart randScopePart = LearnWordsApp::RandScopePart::LOWER_PART;
+				if (isQuickAnswer)
+				{
+					randScopePart = LearnWordsApp::RandScopePart::HI_PART;
+					w.isNeedSkipOneRandomLoop = true;
 				}
-				else
+				_learnWordsApp->fill_dates_and_save(w, freezedTime, randScopePart);
+			}
+			else
 				if (c == 80) // —трелка вниз
 				{
 					_learnWordsApp->add_forgotten(wordsToRepeat[i]._index);

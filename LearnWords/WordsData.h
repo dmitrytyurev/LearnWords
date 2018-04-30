@@ -19,6 +19,10 @@ struct WordsData
 			isInFastRandomQueue = false;
 			isNeedSkipOneRandomLoop = false;
 		}
+		int calcPrevRepeatTime()  // !!! Внимание тут используется факт, что при расчёте cantRandomTestedAfter берётся половина срока до повтора
+		{
+			return cantRandomTestedAfter * 2 - dateOfRepeat;
+		}
 
 		std::string word;
 		std::string translation;

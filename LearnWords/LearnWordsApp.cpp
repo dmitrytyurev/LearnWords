@@ -341,7 +341,7 @@ void LearnWordsApp::process(int argc, char* argv[])
 // 
 //===============================================================================================
 
-void LearnWordsApp::fill_rightAnswersNum(WordsData::WordInfo& w, bool isQuickAnswer)
+void LearnWordsApp::fill_rightAnswersNum(WordsData::WordInfo& w)
 {
 	++w.rightAnswersNum;
 	clamp_max(&w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
