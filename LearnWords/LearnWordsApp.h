@@ -31,7 +31,9 @@ struct LearnWordsApp
 	void set_word_as_just_learned(WordsData::WordInfo& w);
 	void fill_dates_and_save(WordsData::WordInfo& w, time_t currentTime, LearnWordsApp::RandScopePart randScopePart);
 	void fill_rightAnswersNum(WordsData::WordInfo& w);
-
+	void set_as_forgotten(WordsData::WordInfo& w);
+	void set_as_barely_known(WordsData::WordInfo& w);
+	
 	// Вызываются функциями данного класса
 	void fill_dates(float randDays, WordsData::WordInfo &w, time_t currentTime);
 	void reset_all_words_to_repeated(int rightAnswersToSet, float minDaysRepeat, float maxDaysRepeat, time_t currentTime);

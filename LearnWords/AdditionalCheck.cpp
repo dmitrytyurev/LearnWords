@@ -254,7 +254,7 @@ void AdditionalCheck::additional_check(time_t freezedTime, const std::string& fu
 				if (c == 80) // —трелка вниз (забыли слово)
 				{
 					_learnWordsApp->add_forgotten(wordToRepeatIndex);
-					_learnWordsApp->set_word_as_just_learned(w);
+					_learnWordsApp->set_as_forgotten(w);
 					_learnWordsApp->fill_dates_and_save(w, freezedTime, LearnWordsApp::RandScopePart::ALL);
 					break;
 				}
@@ -262,6 +262,7 @@ void AdditionalCheck::additional_check(time_t freezedTime, const std::string& fu
 					if (c == 77) // —трелка вправо (помним слово не очень уверенно)
 					{
 						_learnWordsApp->add_forgotten(wordToRepeatIndex);
+						_learnWordsApp->set_as_barely_known(w);
 						put_word_to_end_of_random_repeat_queue_fast(w, freezedTime);
 						_learnWordsApp->save();
 						break;

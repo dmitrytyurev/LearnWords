@@ -7,6 +7,8 @@
 const int QUICK_ANSWER_TIME_MS = 2900;             // ¬рем€ быстрого ответа в миллисекундах
 const int MAX_RIGHT_REPEATS_GLOBAL_N = 81;
 const int WORDS_LEARNED_GOOD_THRESHOLD = 22; // „исло дней в addDaysMin, по которому выбираетс€ индекс, чтобы считать слова хорошо изученными
+const int DOWN_ANSWERS_FALLBACK = 6;             // Ќомер шага, на который откатываетс€ слово при check_by_time, если забыли слово
+const int RIGHT_ANSWERS_FALLBACK = 10;            // Ќомер шага, на который откатываетс€ слово при check_by_time, если помним неуверенно
 
 float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1];
 float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1];
@@ -346,4 +348,23 @@ void LearnWordsApp::fill_rightAnswersNum(WordsData::WordInfo& w)
 	++w.rightAnswersNum;
 	clamp_max(&w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
 }
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+void LearnWordsApp::set_as_forgotten(WordsData::WordInfo& w)
+{
+	w.rightAnswersNum = std::min(w.rightAnswersNum, DOWN_ANSWERS_FALLBACK);
+}
+
+//===============================================================================================
+// 
+//===============================================================================================
+
+void LearnWordsApp::set_as_barely_known(WordsData::WordInfo& w)
+{
+	w.rightAnswersNum = std::min(w.rightAnswersNum, RIGHT_ANSWERS_FALLBACK);
+}
+
 
