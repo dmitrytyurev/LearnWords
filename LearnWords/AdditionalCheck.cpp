@@ -227,7 +227,7 @@ void AdditionalCheck::additional_check(time_t freezedTime, const std::string& fu
 		} while (c != ' ');
 
 		auto t_end = std::chrono::high_resolution_clock::now();
-		bool isQuickAnswer = _learnWordsApp->is_quick_answer(std::chrono::duration<double, std::milli>(t_end - t_start).count());
+		bool isQuickAnswer = _learnWordsApp->is_quick_answer(std::chrono::duration<double, std::milli>(t_end - t_start).count(), w.translation.c_str());
 
 		while (true)
 		{

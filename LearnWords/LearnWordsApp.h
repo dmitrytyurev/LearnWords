@@ -24,7 +24,7 @@ struct LearnWordsApp
 	void clear_forgotten();
 	void add_forgotten(int forgottenWordIndex);
 	void get_forgotten(std::vector<int>& forgottenWordsIndices);
-	bool is_quick_answer(double milliSec);
+	bool is_quick_answer(double milliSec, const char* translation);
 	void print_buttons_hints(const std::string& str, bool needRightKeyHint);
 	void save();
 	bool isWordJustLearnedOrForgotten(const WordsData::WordInfo& w, time_t curTime) const;
@@ -40,6 +40,7 @@ struct LearnWordsApp
 	int main_menu_choose_mode();
 	void recalc_stats(time_t curTime, int* wordsTimeToRepeatNum, int wordsByLevel[]);
 	time_t get_time();
+	int get_translations_num(const char* translation);
 
 	// Поля
 	WordsData _wordsOnDisk;
