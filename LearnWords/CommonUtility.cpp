@@ -22,7 +22,7 @@ void _cdecl Log::operator()(char *text, ...)
 	FILE* f = nullptr;
 	fopen_s(&f, _fileName.c_str(), "at");
 	if (f == nullptr)
-		exit_msg("Can't  create file %s\n", _fileName);
+		exit_msg("Can't create file %s\n", _fileName.c_str());
 	fprintf(f, "%s", tmpStr);
 	fclose(f);
 }
