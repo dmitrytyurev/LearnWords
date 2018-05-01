@@ -145,7 +145,7 @@ void LearnWordsApp::reset_all_words_to_repeated(int rightAnswersToSet, float min
 // 
 //===============================================================================================
 
-int LearnWordsApp::main_menu_choose_mode()
+int LearnWordsApp::main_menu_choose_mode(time_t freezedTime)
 {
 //	_additionalCheck.log_random_test_words(_freezedTime);
 
@@ -199,12 +199,32 @@ int LearnWordsApp::main_menu_choose_mode()
 
 //	printf("  –андомный повтор: ќсновн=%d (из них skip=%d (%d)), Ѕыстра€=%d ", mainQueueLen, mainQueueSkipLoopCount, deltaSkipLoopCount, fastQueueLen);
 
-	for (const auto& index : _forgottenWordsIndices)
+	if (!_forgottenWordsIndices.empty())
 	{
-		WordsData::WordInfo& w = _wordsOnDisk._words[index];
-		printf("==============================================\n%s\n   %s\n", w.word.c_str(), w.translation.c_str());
+		for (const auto& index : _forgottenWordsIndices)
+		{
+			WordsData::WordInfo& w = _wordsOnDisk._words[index];
+			printf("==============================================\n%s\n   %s\n", w.word.c_str(), w.translation.c_str());
+		}
 	}
+	else
+	{
+		auto print_upcoming_words_info = [this, wordsLearnGoodIndex, freezedTime](int stagesBehind)
+		{
+			for (const auto& w : _wordsOnDisk._words)
+			{
+				if (w.rightAnswersNum == wordsLearnGoodIndex - stagesBehind)
+					printf("%d ", (w.dateOfRepeat - freezedTime) / 3600 / 24);
+			}
+		};
 
+		printf("\n—колько дней до проверки кандидатов на хорошо выученные слова\n");
+		printf("-2 этапа: ");
+		print_upcoming_words_info(2);
+		printf("\n-1 этап: ");
+		print_upcoming_words_info(1);
+	}
+	
 	while (true)
 	{
 		char c = getch_filtered();
@@ -344,7 +364,7 @@ void LearnWordsApp::process(int argc, char* argv[])
 
 		_freezedTime = get_time();   // “екущее врем€ обновл€етс€ один раз перед показом главного меню, чтобы число слов дл€ повтора в меню 
 								   // и последующем запуске режима повтора (в нЄм используетс€ запомненный здесь curTime) было одинаковым .
-		int keyPressed = main_menu_choose_mode();
+		int keyPressed = main_menu_choose_mode(_freezedTime);
 		switch (keyPressed)
 		{
 		case 27:  // ESC

@@ -37,7 +37,7 @@ struct LearnWordsApp
 	// Вызываются функциями данного класса
 	void fill_dates(float randDays, WordsData::WordInfo &w, time_t currentTime);
 	void reset_all_words_to_repeated(int rightAnswersToSet, float minDaysRepeat, float maxDaysRepeat, time_t currentTime);
-	int main_menu_choose_mode();
+	int main_menu_choose_mode(time_t freezedTime);
 	void recalc_stats(time_t curTime, int* wordsTimeToRepeatNum, int wordsByLevel[]);
 	time_t get_time();
 	int get_translations_num(const char* translation);
