@@ -2,7 +2,8 @@
 #include "CommonUtility.h"
 #include "LearnWordsApp.h"
 #include "FileOperate.h"
-
+#include "Windows.h"
+#undef min
 
 const int QUICK_ANSWER_TIME_MS_FOR_ONE_TRANSLATION   = 2200;   // Время быстрого ответа в миллисекундах для слова имеющего одно значение
 const int QUICK_ANSWER_TIME_MS_FOR_MORE_TRANSLATIONS = 3200;   // Время быстрого ответа в миллисекундах для слова имеющего более одного значения
@@ -214,7 +215,7 @@ int LearnWordsApp::main_menu_choose_mode(time_t freezedTime)
 			for (const auto& w : _wordsOnDisk._words)
 			{
 				if (w.rightAnswersNum == wordsLearnGoodIndex - stagesBehind)
-					printf("%d ", (w.dateOfRepeat - freezedTime) / 3600 / 24);
+					printf("%2.1f ", (w.dateOfRepeat - freezedTime) / 3600 / 24.f);
 			}
 		};
 
@@ -304,7 +305,46 @@ void LearnWordsApp::fill_dates_and_save(WordsData::WordInfo& w, time_t currentTi
 
 void LearnWordsApp::print_buttons_hints(const std::string& str, bool needRightKeyHint)
 {
-	printf("\n%s\n\n\n  Стрелка вверх  - помню хорошо!\n  Стрелка вниз   - забыл/перепутал хотя бы одно значение\n", str.c_str());
+	CONSOLE_SCREEN_BUFFER_INFO   csbi;
+	csbi.wAttributes = 0;
+	bool isColorReadSucsess = false;
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (hConsole != INVALID_HANDLE_VALUE)
+		isColorReadSucsess = GetConsoleScreenBufferInfo(hConsole, &csbi) == TRUE;
+
+	const char* p = str.c_str();
+	int bracesNestCount = 0;
+
+	printf("\n");
+	if (hConsole != INVALID_HANDLE_VALUE && isColorReadSucsess)
+		SetConsoleTextAttribute(hConsole, 15);
+	while (*p)
+	{
+		if (*p == '(' || *p == '[')
+		{
+			++bracesNestCount;
+			if (hConsole != INVALID_HANDLE_VALUE && isColorReadSucsess)
+				SetConsoleTextAttribute(hConsole, 8);
+		}
+
+		printf("%c", *p);
+
+		if (*p == ')' || *p == ']')
+		{
+			--bracesNestCount;
+			if (bracesNestCount == 0)
+				if (hConsole != INVALID_HANDLE_VALUE && isColorReadSucsess)
+					SetConsoleTextAttribute(hConsole, 15);
+		}
+
+		++p;
+	}
+	printf("\n");
+
+	if (hConsole != INVALID_HANDLE_VALUE && isColorReadSucsess)
+		SetConsoleTextAttribute(hConsole, csbi.wAttributes);
+
+	printf("\n\n  Стрелка вверх  - помню хорошо!\n  Стрелка вниз   - забыл/перепутал хотя бы одно значение\n");
 	if (needRightKeyHint)
 		printf("  Стрелка вправо - вспомнил все значения, но с трудом\n");
 }
