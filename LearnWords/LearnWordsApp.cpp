@@ -9,8 +9,8 @@ const int QUICK_ANSWER_TIME_MS_FOR_ONE_TRANSLATION   = 2200;   // ¬рем€ быстрого
 const int QUICK_ANSWER_TIME_MS_FOR_MORE_TRANSLATIONS = 3200;   // ¬рем€ быстрого ответа в миллисекундах дл€ слова имеющего более одного значени€
 const int MAX_RIGHT_REPEATS_GLOBAL_N = 81;
 const int WORDS_LEARNED_GOOD_THRESHOLD = 22; // „исло дней в addDaysMin, по которому выбираетс€ индекс, чтобы считать слова хорошо изученными
-const int DOWN_ANSWERS_FALLBACK = 6;             // Ќомер шага, на который откатываетс€ слово при check_by_time, если забыли слово
-const int RIGHT_ANSWERS_FALLBACK = 10;            // Ќомер шага, на который откатываетс€ слово при check_by_time, если помним неуверенно
+const int DOWN_ANSWERS_FALLBACK = 20;             // Ќомер шага, на который откатываетс€ слово при check_by_time, если забыли слово
+const int RIGHT_ANSWERS_FALLBACK = 29;            // Ќомер шага, на который откатываетс€ слово при check_by_time, если помним неуверенно
 
 float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1];
 float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1];
