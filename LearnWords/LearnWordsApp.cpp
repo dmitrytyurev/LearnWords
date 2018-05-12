@@ -11,6 +11,8 @@ const int MAX_RIGHT_REPEATS_GLOBAL_N = 81;
 const int WORDS_LEARNED_GOOD_THRESHOLD = 22; // Число дней в addDaysMin, по которому выбирается индекс, чтобы считать слова хорошо изученными
 const int DOWN_ANSWERS_FALLBACK = 20;             // Номер шага, на который откатывается слово при check_by_time, если забыли слово
 const int RIGHT_ANSWERS_FALLBACK = 29;            // Номер шага, на который откатывается слово при check_by_time, если помним неуверенно
+const float MIN_DAYS_IF_QUICK_ANSWER = 3;         // Если быстрый ответ, то слово не должно появиться быстрее, чем через это количество дней
+
 
 float addDaysMin[MAX_RIGHT_REPEATS_GLOBAL_N + 1];
 float addDaysMax[MAX_RIGHT_REPEATS_GLOBAL_N + 1];
@@ -282,18 +284,30 @@ void LearnWordsApp::fill_dates(float randDays, WordsData::WordInfo &w, time_t cu
 // 
 //===============================================================================================
 
-void LearnWordsApp::fill_dates_and_save(WordsData::WordInfo& w, time_t currentTime, LearnWordsApp::RandScopePart randScopePart)
+void LearnWordsApp::fill_dates_and_save(WordsData::WordInfo& w, time_t currentTime, bool needAdvance_RightAnswersNum, bool isQuickAnswer)
 {
+	if (needAdvance_RightAnswersNum)
+	{
+		++w.rightAnswersNum;
+		clamp_max(&w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
+	}
+
 	float min = addDaysMin[w.rightAnswersNum];
 	float max = addDaysMax[w.rightAnswersNum];
 
-	if (randScopePart == LearnWordsApp::RandScopePart::LOWER_PART)
-		max = (min + max) * 0.5f;
+	if (isQuickAnswer)
+		min = (min + max) * 0.5f;
 	else
-		if (randScopePart == LearnWordsApp::RandScopePart::HI_PART)
-			min = (min + max) * 0.5f;
+		max = (min + max) * 0.5f;
 
 	float randDays = rand_float(min, max);
+
+	if (isQuickAnswer && randDays < MIN_DAYS_IF_QUICK_ANSWER)
+	{
+		while (w.rightAnswersNum < MAX_RIGHT_REPEATS_GLOBAL_N && addDaysMax[w.rightAnswersNum] < MIN_DAYS_IF_QUICK_ANSWER)
+			++w.rightAnswersNum;
+		randDays = MIN_DAYS_IF_QUICK_ANSWER;
+	}
 
 	fill_dates(randDays, w, currentTime);
 	save();
@@ -430,16 +444,6 @@ void LearnWordsApp::process(int argc, char* argv[])
 			break;
 		}
 	}
-}
-
-//===============================================================================================
-// 
-//===============================================================================================
-
-void LearnWordsApp::fill_rightAnswersNum(WordsData::WordInfo& w)
-{
-	++w.rightAnswersNum;
-	clamp_max(&w.rightAnswersNum, MAX_RIGHT_REPEATS_GLOBAL_N);
 }
 
 //===============================================================================================

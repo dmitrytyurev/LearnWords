@@ -11,13 +11,6 @@ struct LearnWordsApp
 {
 	LearnWordsApp();
 
-	enum class RandScopePart
-	{
-		ALL,
-		LOWER_PART,
-		HI_PART,
-	};
-
 	void process(int argc, char* argv[]);
 
 	// Вызываются классами более низкого уровня
@@ -29,8 +22,7 @@ struct LearnWordsApp
 	void save();
 	bool isWordJustLearnedOrForgotten(const WordsData::WordInfo& w, time_t curTime) const;
 	void set_word_as_just_learned(WordsData::WordInfo& w);
-	void fill_dates_and_save(WordsData::WordInfo& w, time_t currentTime, LearnWordsApp::RandScopePart randScopePart);
-	void fill_rightAnswersNum(WordsData::WordInfo& w);
+	void fill_dates_and_save(WordsData::WordInfo& w, time_t currentTime, bool needAdvance_RightAnswersNum, bool isQuickAnswer);
 	void set_as_forgotten(WordsData::WordInfo& w);
 	void set_as_barely_known(WordsData::WordInfo& w);
 	

@@ -144,16 +144,10 @@ logger("Add from future: %s, time to repeat: %d\n", w.word.c_str(), w.dateOfRepe
 			int keepPrevRightAnswersNum = w.rightAnswersNum;
 			if (c == 72)  // Стрелка вверх
 			{
-				if (wordsToRepeat[i]._ifRecentlyRepeated == false)
-					_learnWordsApp->fill_rightAnswersNum(w);
 				pAdditionalCheck->put_word_to_end_of_random_repeat_queue_common(w);
-				LearnWordsApp::RandScopePart randScopePart = LearnWordsApp::RandScopePart::LOWER_PART;
 				if (isQuickAnswer)
-				{
-					randScopePart = LearnWordsApp::RandScopePart::HI_PART;
 					w.isNeedSkipOneRandomLoop = true;
-				}
-				_learnWordsApp->fill_dates_and_save(w, freezedTime, randScopePart);
+				_learnWordsApp->fill_dates_and_save(w, freezedTime, wordsToRepeat[i]._ifRecentlyRepeated == false, isQuickAnswer);
 			}
 			else
 				if (c == 80) // Стрелка вниз
@@ -161,7 +155,7 @@ logger("Add from future: %s, time to repeat: %d\n", w.word.c_str(), w.dateOfRepe
 					_learnWordsApp->add_forgotten(wordsToRepeat[i]._index);
 					_learnWordsApp->set_as_forgotten(w);
 					pAdditionalCheck->put_word_to_end_of_random_repeat_queue_fast(w, freezedTime);
-					_learnWordsApp->fill_dates_and_save(w, freezedTime, LearnWordsApp::RandScopePart::ALL);
+					_learnWordsApp->fill_dates_and_save(w, freezedTime, false, false);
 				}
 				else
 					if (c == 77) // Стрелка вправо (помним слово не очень уверенно)
@@ -169,7 +163,7 @@ logger("Add from future: %s, time to repeat: %d\n", w.word.c_str(), w.dateOfRepe
 						_learnWordsApp->add_forgotten(wordsToRepeat[i]._index);
 						_learnWordsApp->set_as_barely_known(w);
 						pAdditionalCheck->put_word_to_end_of_random_repeat_queue_fast(w, freezedTime);
-						_learnWordsApp->fill_dates_and_save(w, freezedTime, LearnWordsApp::RandScopePart::ALL);
+						_learnWordsApp->fill_dates_and_save(w, freezedTime, false, false);
 					}
 					else
 						continue;

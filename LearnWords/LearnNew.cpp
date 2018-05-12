@@ -222,7 +222,7 @@ void LearnNew::learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 					if (++(wordToLearn._localRightAnswersNum) == TIMES_TO_GUESS_TO_LEARNED)
 					{
 						_learnWordsApp->set_word_as_just_learned(w);
-						_learnWordsApp->fill_dates_and_save(w, freezedTime, LearnWordsApp::RandScopePart::ALL);
+						_learnWordsApp->fill_dates_and_save(w, freezedTime, false, false);
 						if (are_all_words_learned(learnCycleQueue))
 							return;
 					}
@@ -249,7 +249,7 @@ void LearnNew::learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 					case FromWhatSource::FROM_RANDOM_REPEAT_LIST:
 						_learnWordsApp->add_forgotten(wordToRepeatIndex);
 						_learnWordsApp->set_as_forgotten(w);
-						_learnWordsApp->fill_dates_and_save(w, freezedTime, LearnWordsApp::RandScopePart::ALL);
+						_learnWordsApp->fill_dates_and_save(w, freezedTime, false, false);
 						break;
 					}
 					break;
@@ -380,7 +380,7 @@ void LearnNew::learn_forgotten(time_t freezedTime, AdditionalCheck* pAdditionalC
 					case FromWhatSource::FROM_RANDOM_REPEAT_LIST:
 						_learnWordsApp->add_forgotten(wordToRepeatIndex);
 						_learnWordsApp->set_as_forgotten(w);
-						_learnWordsApp->fill_dates_and_save(w, freezedTime, LearnWordsApp::RandScopePart::ALL);
+						_learnWordsApp->fill_dates_and_save(w, freezedTime, false, false);
 						break;
 					}
 					break;

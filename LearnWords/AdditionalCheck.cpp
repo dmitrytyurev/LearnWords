@@ -255,7 +255,7 @@ void AdditionalCheck::additional_check(time_t freezedTime, const std::string& fu
 				{
 					_learnWordsApp->add_forgotten(wordToRepeatIndex);
 					_learnWordsApp->set_as_forgotten(w);
-					_learnWordsApp->fill_dates_and_save(w, freezedTime, LearnWordsApp::RandScopePart::ALL);
+					_learnWordsApp->fill_dates_and_save(w, freezedTime, false, false);
 					break;
 				}
 				else
