@@ -5,8 +5,8 @@
 #include "Windows.h"
 #undef min
 
-const int QUICK_ANSWER_TIME_MS_FOR_ONE_TRANSLATION   = 2000;   // Время быстрого ответа в миллисекундах для слова имеющего одно значение
-const int QUICK_ANSWER_TIME_MS_FOR_MORE_TRANSLATIONS = 2700;   // Время быстрого ответа в миллисекундах для слова имеющего более одного значения
+const int QUICK_ANSWER_TIME_MS_FOR_ONE_TRANSLATION   = 1800;   // Время быстрого ответа в миллисекундах для слова имеющего одно значение
+const int QUICK_ANSWER_TIME_MS_FOR_MORE_TRANSLATIONS = 2500;   // Время быстрого ответа в миллисекундах для слова имеющего более одного значения
 const int MAX_RIGHT_REPEATS_GLOBAL_N = 81;
 const int WORDS_LEARNED_GOOD_THRESHOLD = 22; // Число дней в addDaysMin, по которому выбирается индекс, чтобы считать слова хорошо изученными
 const int DOWN_ANSWERS_FALLBACK = 20;             // Номер шага, на который откатывается слово при check_by_time, если забыли слово
@@ -221,8 +221,18 @@ int LearnWordsApp::main_menu_choose_mode(time_t freezedTime)
 			}
 		};
 
-		printf("\nСколько дней до проверки кандидатов на хорошо выученные слова\n");
-		printf("-2 этапа: ");
+		printf("\nСколько дней до проверки кандидатов на хорошо выученные слова");
+		printf("\n-7 этапа: ");
+		print_upcoming_words_info(7);
+		printf("\n-6 этапа: ");
+		print_upcoming_words_info(6);
+		printf("\n-5 этапа: ");
+		print_upcoming_words_info(5);
+		printf("\n-4 этапа: ");
+		print_upcoming_words_info(4);
+		printf("\n-3 этапа: ");
+		print_upcoming_words_info(3);
+		printf("\n-2 этапа: ");
 		print_upcoming_words_info(2);
 		printf("\n-1 этап: ");
 		print_upcoming_words_info(1);
