@@ -217,7 +217,7 @@ int LearnWordsApp::main_menu_choose_mode(time_t freezedTime)
 			for (const auto& w : _wordsOnDisk._words)
 			{
 				if (w.rightAnswersNum == wordsLearnGoodIndex - stagesBehind)
-					printf("%2.1f ", (w.dateOfRepeat - freezedTime) / 3600 / 24.f);
+					printf("%d ", int((w.dateOfRepeat - freezedTime) / 3600 / 24.f));
 			}
 		};
 
