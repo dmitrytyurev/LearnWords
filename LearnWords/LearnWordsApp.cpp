@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "algorithm"
 #include "CommonUtility.h"
 #include "LearnWordsApp.h"
 #include "FileOperate.h"
@@ -342,6 +343,9 @@ void LearnWordsApp::print_buttons_hints(const std::string& str, bool needRightKe
 	printf("\n");
 	if (hConsole != INVALID_HANDLE_VALUE && isColorReadSucsess)
 		SetConsoleTextAttribute(hConsole, 15);
+	if (str.find('[') == std::string::npos)
+		printf(" ");
+
 	while (*p)
 	{
 		if (*p == '(' || *p == '[')
@@ -351,7 +355,9 @@ void LearnWordsApp::print_buttons_hints(const std::string& str, bool needRightKe
 				SetConsoleTextAttribute(hConsole, 8);
 		}
 
-		printf("%c", *p);
+		bool isCommaSeparatingMeanings = (*p == ',' &&  bracesNestCount == 0);
+		if (!isCommaSeparatingMeanings)
+			printf("%c", *p);
 
 		if (*p == ')' || *p == ']')
 		{
@@ -360,6 +366,9 @@ void LearnWordsApp::print_buttons_hints(const std::string& str, bool needRightKe
 				if (hConsole != INVALID_HANDLE_VALUE && isColorReadSucsess)
 					SetConsoleTextAttribute(hConsole, 15);
 		}
+
+		if (*p == ']' || (*p == ',' && bracesNestCount == 0))
+			printf("\n");
 
 		++p;
 	}
