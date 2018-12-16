@@ -49,7 +49,9 @@ void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAddit
 
 	// ≈сли этих слов больше, чем нужно, то урезать число слов до необходимого
 
-	const int MAX_WORDS_TO_CHECK = 77;
+	const int MAX_WORDS_TO_CHECK = 77;  // ≈сли слов на об€зательную проверку больше, чем это число, то урезаем
+	const int MAX_WORDS_TO_CHECK2 = 47; // ≈сли слов на об€зательную проверку меньше, чем это число, то добавл€ем до этого числа
+
 	if (wordsToRepeat.size() > MAX_WORDS_TO_CHECK)
 	{
 		for (int i = 0; i < (int)wordsToRepeat.size(); ++i)
@@ -63,7 +65,7 @@ void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAddit
 		wordsToRepeat.resize(MAX_WORDS_TO_CHECK);
 	}
 	else
-		if (wordsToRepeat.size() < MAX_WORDS_TO_CHECK)  // ≈сли слов наоборот меньше, то добавить
+		if (wordsToRepeat.size() < MAX_WORDS_TO_CHECK2)  // ≈сли слов наоборот меньше, то добавить
 		{
 			auto ifRepeatedRecently = [](WordsData::WordInfo& w, time_t freezedTime) { return freezedTime - w.calcPrevRepeatTime() < 3600 * LAST_HOURS_REPEAT_NUM; };
 
@@ -75,12 +77,12 @@ void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAddit
 				{
 logger("Add from recently: %s, time from repeat: %d\n", w.word.c_str(), freezedTime - w.calcPrevRepeatTime());
 					wordsToRepeat.emplace_back(WordToCheck(i, true));
-					if (wordsToRepeat.size() == MAX_WORDS_TO_CHECK)
+					if (wordsToRepeat.size() == MAX_WORDS_TO_CHECK2)
 						break;
 				}
 			}
 
-			if (wordsToRepeat.size() < MAX_WORDS_TO_CHECK)  // ≈сли слов по-прежнему не хватает, то добавл€ем слова, врем€ повтора которых придЄт через NN часов
+			if (wordsToRepeat.size() < MAX_WORDS_TO_CHECK2)  // ≈сли слов по-прежнему не хватает, то добавл€ем слова, врем€ повтора которых придЄт через NN часов
 			{
 				const int PRELIMINARY_CHECK_HOURS = 24;  // —лова, которые надо будет провер€ть через столько часов добавим в проверку сейчас, если слов не хватает
 
@@ -94,7 +96,7 @@ logger("Add from recently: %s, time from repeat: %d\n", w.word.c_str(), freezedT
 						{
 logger("Add from future: %s, time to repeat: %d\n", w.word.c_str(), w.dateOfRepeat - freezedTime);
 							wordsToRepeat.emplace_back(WordToCheck(i));
-							if (wordsToRepeat.size() == MAX_WORDS_TO_CHECK)
+							if (wordsToRepeat.size() == MAX_WORDS_TO_CHECK2)
 								break;
 						}
 					}
