@@ -440,6 +440,11 @@ void LearnWordsApp::process(int argc, char* argv[])
 			break;
 		case '2':
 			_mandatoryCheck.mandatory_check(_freezedTime, &_additionalCheck, _fullFileName);
+			if (!_forgottenWordsIndices.empty())
+				do 
+				{
+					_learnNew.learn_forgotten(_freezedTime, &_additionalCheck);
+				} while (!_forgottenWordsIndices.empty());
 			break;
 		case '3':
 			_learnNew.learn_forgotten(_freezedTime, &_additionalCheck);
