@@ -6,8 +6,8 @@
 #include "Windows.h"
 #undef min
 
-const int QUICK_ANSWER_TIME_MS_FOR_ONE_TRANSLATION   = 1800;   // ¬рем€ быстрого ответа в миллисекундах дл€ слова имеющего одно значение
-const int QUICK_ANSWER_TIME_MS_FOR_MORE_TRANSLATIONS = 2500;   // ¬рем€ быстрого ответа в миллисекундах дл€ слова имеющего более одного значени€
+const int QUICK_ANSWER_TIME_MS_FOR_ONE_TRANSLATION   = 2100;   // ¬рем€ быстрого ответа в миллисекундах дл€ слова имеющего одно значение
+const int QUICK_ANSWER_TIME_MS_FOR_MORE_TRANSLATIONS = 2600;   // ¬рем€ быстрого ответа в миллисекундах дл€ слова имеющего более одного значени€
 const int MAX_RIGHT_REPEATS_GLOBAL_N = 81;
 const int WORDS_LEARNED_GOOD_THRESHOLD = 22; // „исло дней в addDaysMin, по которому выбираетс€ индекс, чтобы считать слова хорошо изученными
 const int DOWN_ANSWERS_FALLBACK = 20;             // Ќомер шага, на который откатываетс€ слово при check_by_time, если забыли слово
@@ -368,7 +368,11 @@ void LearnWordsApp::print_buttons_hints(const std::string& str, bool needRightKe
 		}
 
 		if (*p == ']' || (*p == ',' && bracesNestCount == 0))
+		{ 
 			printf("\n");
+			if (*p == ']')
+				printf("\n");
+		}
 
 		++p;
 	}
