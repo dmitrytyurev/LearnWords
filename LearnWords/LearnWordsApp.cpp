@@ -178,17 +178,6 @@ int LearnWordsApp::main_menu_choose_mode(time_t freezedTime)
 		deltaWordsLearnedGood = wordsLearnedGood - prevWordsLearnedGood;
 	prevWordsLearnedGood = wordsLearnedGood;
 
-	int mainQueueLen = 0;
-	int mainQueueSkipLoopCount = 0;
-	int fastQueueLen = 0;
-	_additionalCheck.calc_words_for_random_repeat(&mainQueueLen, &mainQueueSkipLoopCount, &fastQueueLen, _freezedTime);
-
-	static int prevSkipLoopCount;
-	int deltaSkipLoopCount = 0;
-	if (prevSkipLoopCount > 0)
-		deltaSkipLoopCount = mainQueueSkipLoopCount - prevSkipLoopCount;
-	prevSkipLoopCount = mainQueueSkipLoopCount;
-
 	printf("\n");
 	printf("\n");
 	printf("1. Выучить новые слова\n");
