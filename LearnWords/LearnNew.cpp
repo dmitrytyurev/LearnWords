@@ -262,6 +262,7 @@ void LearnNew::learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 //===============================================================================================
 // 
 //===============================================================================================
+extern Log logger;
 
 void LearnNew::learn_forgotten(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 {
@@ -331,6 +332,15 @@ void LearnNew::learn_forgotten(time_t freezedTime, AdditionalCheck* pAdditionalC
 			fromWhatSource = FromWhatSource::FROM_RANDOM_REPEAT_LIST;
 			wordToLearn = WordToLearn(wordToRepeatIndex);
 		}
+
+		// Считаем и показываем прогресс в повторе
+		int sumRightUnswers = 0;
+		if (fromWhatSource == FromWhatSource::FROM_LEANRING_QUEUE)
+			sumRightUnswers += wordToLearn._localRightAnswersNum;
+		for (const auto& word : learnCycleQueue)
+			sumRightUnswers += word._localRightAnswersNum;
+		int progress = sumRightUnswers * 100 / (wordsToLearnIndices.size() * TIMES_TO_GUESS_TO_LEARNED);
+		printf("\nProgress = %d\n", progress);
 
 		// Показываем слово
 		WordsData::WordInfo& w = _pWordsData->_words[wordToLearn._index];
