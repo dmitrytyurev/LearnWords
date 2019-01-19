@@ -26,7 +26,7 @@ extern Log logger;
 //
 //===============================================================================================
 
-LearnWordsApp::LearnWordsApp(): _additionalCheck(this, &_wordsOnDisk), _mandatoryCheck(this, &_wordsOnDisk), _learnNew(this, &_wordsOnDisk), _listening(this, &_wordsOnDisk), _freezedTime(0) 
+LearnWordsApp::LearnWordsApp(): _additionalCheck(this, &_wordsOnDisk), _mandatoryCheck(this, &_wordsOnDisk), _learnNew(this, &_wordsOnDisk), _freezedTime(0) 
 {
 	for (int i = 0; i < MAX_RIGHT_REPEATS_GLOBAL_N + 1; ++i)
 	{
@@ -194,8 +194,6 @@ int LearnWordsApp::main_menu_choose_mode(time_t freezedTime)
 	printf("1. Выучить новые слова\n");
 	printf("2. Ежедневный повтор  [%d]\n", wordsTimeToRepeatNum);
 	printf("3. Подучить забытое [%d]\n", (int)_forgottenWordsIndices.size());
-	printf("4. Аудирование\n");
-	printf("5. Повторить больше слов\n");
 	printf("\n\n");
 
 	printf("Выучено слов: %d, из них хорошо: %d (%d)\n", wordsLearnedTotal, wordsLearnedGood, deltaWordsLearnedGood);
@@ -456,12 +454,6 @@ void LearnWordsApp::process(int argc, char* argv[])
 			break;
 		case '3':
 			_learnNew.learn_forgotten(_freezedTime, &_additionalCheck);
-			break;
-		case '4':
-			_listening.listening(_fullRimPath);
-			break;
-		case '5':
-			_additionalCheck.additional_check(_freezedTime, _fullFileName);
 			break;
 		default:
 			break;

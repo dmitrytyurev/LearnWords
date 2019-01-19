@@ -155,7 +155,6 @@
     <ClInclude Include="HightResolutionTimer.h" />
     <ClInclude Include="LearnNew.h" />
     <ClInclude Include="LearnWordsApp.h" />
-    <ClInclude Include="Listening.h" />
     <ClInclude Include="MandatoryCheck.h" />
     <ClInclude Include="SoundClip.h" />
     <ClInclude Include="stdafx.h" />
@@ -171,7 +170,6 @@
     <ClCompile Include="LearnNew.cpp" />
     <ClCompile Include="LearnWords.cpp" />
     <ClCompile Include="LearnWordsApp.cpp" />
-    <ClCompile Include="Listening.cpp" />
     <ClCompile Include="MandatoryCheck.cpp" />
     <ClCompile Include="SoundClip.cpp" />
     <ClCompile Include="stdafx.cpp">

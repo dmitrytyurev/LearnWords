@@ -5,7 +5,6 @@
 #include "AdditionalCheck.h"
 #include "MandatoryCheck.h"
 #include "LearnNew.h"
-#include "Listening.h"
 
 struct LearnWordsApp
 {
@@ -44,6 +43,5 @@ struct LearnWordsApp
 	AdditionalCheck _additionalCheck;
 	MandatoryCheck  _mandatoryCheck;
 	LearnNew        _learnNew;
-	Listening       _listening;
 };
 

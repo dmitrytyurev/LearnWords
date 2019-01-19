@@ -51,9 +51,6 @@
     <ClInclude Include="SoundClip.h">
       <Filter>Файлы исходного кода</Filter>
     </ClInclude>
-    <ClInclude Include="Listening.h">
-      <Filter>Файлы исходного кода</Filter>
-    </ClInclude>
     <ClInclude Include="HightResolutionTimer.h">
       <Filter>Файлы исходного кода</Filter>
     </ClInclude>
@@ -90,9 +87,6 @@
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
     <ClCompile Include="SoundClip.cpp">
-      <Filter>Файлы исходного кода</Filter>
-    </ClCompile>
-    <ClCompile Include="Listening.cpp">
       <Filter>Файлы исходного кода</Filter>
     </ClCompile>
     <ClCompile Include="HightResolutionTimer.cpp">
