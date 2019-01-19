@@ -247,6 +247,7 @@ void LearnNew::learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 						_learnWordsApp->save();
 						break;
 					case FromWhatSource::FROM_RANDOM_REPEAT_LIST:
+						pAdditionalCheck->put_word_to_end_of_random_repeat_queue_common(w);
 						_learnWordsApp->add_forgotten(wordToRepeatIndex);
 						_learnWordsApp->set_as_forgotten(w);
 						_learnWordsApp->fill_dates_and_save(w, freezedTime, false, false);
@@ -378,6 +379,7 @@ void LearnNew::learn_forgotten(time_t freezedTime, AdditionalCheck* pAdditionalC
 						put_to_queue(learnCycleQueue, wordToLearn, false);
 						break;
 					case FromWhatSource::FROM_RANDOM_REPEAT_LIST:
+						pAdditionalCheck->put_word_to_end_of_random_repeat_queue_common(w);
 						_learnWordsApp->add_forgotten(wordToRepeatIndex);
 						_learnWordsApp->set_as_forgotten(w);
 						_learnWordsApp->fill_dates_and_save(w, freezedTime, false, false);
