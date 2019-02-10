@@ -303,7 +303,9 @@ void LearnNew::learn_forgotten(time_t freezedTime, AdditionalCheck* pAdditionalC
 		learnCycleQueue.push_back(word);
 	}
 
-	int showFromRandomNum = rand_int(0, 3);
+	const int minRepeatFrom = 6;
+	const int maxRepeatFrom = 8;
+	int showFromRandomNum = rand_int(minRepeatFrom, maxRepeatFrom);
 	while (true)
 	{
 		clear_console_screen();
@@ -322,7 +324,7 @@ void LearnNew::learn_forgotten(time_t freezedTime, AdditionalCheck* pAdditionalC
 		bool wantShowLearnWord = (--showFromRandomNum == -1);
 		if (wantShowLearnWord || wordToRepeatIndex == -1)
 		{
-			showFromRandomNum = rand_int(1, 3);
+			showFromRandomNum = rand_int(minRepeatFrom, maxRepeatFrom);
 			fromWhatSource = FromWhatSource::FROM_LEANRING_QUEUE;
 			wordToLearn = learnCycleQueue[0];
 			learnCycleQueue.erase(learnCycleQueue.begin());

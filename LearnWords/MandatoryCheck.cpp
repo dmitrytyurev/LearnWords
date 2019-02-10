@@ -49,8 +49,8 @@ void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAddit
 
 	// Если этих слов больше, чем нужно, то урезать число слов до необходимого
 
-	const int MAX_WORDS_TO_CHECK = 77;  // Если слов на обязательную проверку больше, чем это число, то урезаем
-	const int MAX_WORDS_TO_CHECK2 = 47; // Если слов на обязательную проверку меньше, чем это число, то добавляем до этого числа
+	const int MAX_WORDS_TO_CHECK = 60;  // Если слов на обязательную проверку больше, чем это число, то урезаем
+	const int MAX_WORDS_TO_CHECK2 = 30; // Если слов на обязательную проверку меньше, чем это число, то добавляем до этого числа
 
 	if (wordsToRepeat.size() > MAX_WORDS_TO_CHECK)
 	{
@@ -68,45 +68,24 @@ void MandatoryCheck::mandatory_check(time_t freezedTime, AdditionalCheck* pAddit
 		if (wordsToRepeat.size() < MAX_WORDS_TO_CHECK2)  // Если слов наоборот меньше, то добавить
 		{
 			auto ifRepeatedRecently = [](WordsData::WordInfo& w, time_t freezedTime) { return freezedTime - w.calcPrevRepeatTime() < 3600 * LAST_HOURS_REPEAT_NUM; };
+			const int PRELIMINARY_CHECK_HOURS = 24;  // Слова, которые надо будет проверять через столько часов добавим в проверку сейчас, если слов не хватает
 
-			for (int i = 0; i < (int)_pWordsData->_words.size(); ++i)   // Сначала добавляем слова, которые повторяли за последние LAST_HOURS_REPEAT_NUM часов
+			for (int i = 0; i < (int)_pWordsData->_words.size(); ++i)
 			{
 				WordsData::WordInfo& w = _pWordsData->_words[i];
 
-				if (!ifTimeToRepeat(w, freezedTime) && ifRepeatedRecently(w, freezedTime))
+				if (!ifTimeToRepeat(w, freezedTime) && !ifRepeatedRecently(w, freezedTime))
 				{
-logger("Add from recently: %s, time from repeat: %d\n", w.word.c_str(), freezedTime - w.calcPrevRepeatTime());
-					wordsToRepeat.emplace_back(WordToCheck(i, true));
-					if (wordsToRepeat.size() == MAX_WORDS_TO_CHECK2)
-						break;
-				}
-			}
-
-			if (wordsToRepeat.size() < MAX_WORDS_TO_CHECK2)  // Если слов по-прежнему не хватает, то добавляем слова, время повтора которых придёт через NN часов
-			{
-				const int PRELIMINARY_CHECK_HOURS = 24;  // Слова, которые надо будет проверять через столько часов добавим в проверку сейчас, если слов не хватает
-
-				for (int i = 0; i < (int)_pWordsData->_words.size(); ++i)
-				{
-					WordsData::WordInfo& w = _pWordsData->_words[i];
-
-					if (!ifTimeToRepeat(w, freezedTime) && !ifRepeatedRecently(w, freezedTime))
+					if (w.dateOfRepeat != 0 && w.dateOfRepeat < freezedTime + 3600 * PRELIMINARY_CHECK_HOURS)
 					{
-						if (w.dateOfRepeat != 0 && w.dateOfRepeat < freezedTime + 3600 * PRELIMINARY_CHECK_HOURS)
-						{
 logger("Add from future: %s, time to repeat: %d\n", w.word.c_str(), w.dateOfRepeat - freezedTime);
-							wordsToRepeat.emplace_back(WordToCheck(i));
-							if (wordsToRepeat.size() == MAX_WORDS_TO_CHECK2)
-								break;
-						}
+						wordsToRepeat.emplace_back(WordToCheck(i));
+						if (wordsToRepeat.size() == MAX_WORDS_TO_CHECK2)
+							break;
 					}
 				}
 			}
 		}
-
-	// Перемешать выбранные слова
-
-	std::random_shuffle(wordsToRepeat.begin(), wordsToRepeat.end());
 
 	// Главный цикл проверки слов
 
