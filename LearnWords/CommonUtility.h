@@ -136,8 +136,6 @@ void clamp_max(T* v, const T& hi)
 template<class T>
 void clamp_minmax(T* v, const T& lo, const T& hi)
 {
-	assert(hi >= lo);
-
 	if (*v < lo)
 		*v = lo;
 	else

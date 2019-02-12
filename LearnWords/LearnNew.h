@@ -4,15 +4,56 @@ struct LearnWordsApp;
 struct WordsData;
 struct AdditionalCheck;
 
+
+// ѕоставщик отвлекающих слов, перемежающих подучиваемые забытые слова. Ќо выбирает дл€ отвлечени€ слова, которые тоже полезно повторить :
+// Ёто слова которые пора повтор€ть или скоро будет пора, также это слова, на которые мы недавно ответили правильно, но долго думали
+
+enum class FromWhatSource
+{
+	NOT_INITIALIZED,
+	FROM_LEANRING_QUEUE,     // —лово из очереди подучиваемых слов
+	FROM_REMEMBERED_LONG,    // Ёто слово из тех, что провер€ли в этой сессии программы, ответили хорошо, но очень долго
+	FROM_MANDATORY,          // Ёто слово из готовых об€зательной проверке (включа€ небольшое опережение)
+	FROM_ADDITIONAL          // Ёто слово получено из AdditionalCheck
+};
+
+struct DistractWord
+{
+
+	DistractWord(int wordIndex, FromWhatSource wordFromWhatSource) : index(wordIndex), fromWhatSource(wordFromWhatSource) {}
+
+	int index = 0;                                                   // »ндекс слова в _wordsOnDisk
+	FromWhatSource fromWhatSource = FromWhatSource::NOT_INITIALIZED; // »сточник слова
+};
+
+class DistractWordsSupplier  
+{
+public:
+	DistractWordsSupplier(LearnWordsApp* learnWordsApp, time_t freezedTime);
+	DistractWord get_word(time_t freezedTime, AdditionalCheck* pAdditionalCheck);
+	bool is_first_cycle();
+
+private:
+	LearnWordsApp* _learnWordsApp = nullptr;
+	std::vector<DistractWord> distractWords; // —лова дл€ отвлечени€. ≈сли их не хватит, то будем динамически добирать из циклического списка повтора
+	int index = 0;                     // »ндекс выдаваемого слова в distractWords
+	int returnWordsFromAdditional = 0; // —колько слов нужно вернуть из AdditionalCheck. ≈сли здесь 0, то выдаЄм слова из distractWords.
+	bool isFirstCycle = true;          // ѕервый ли это круг обхода по массиву distractWords
+};
+
+
+//  ласс дл€ выучивани€ новых слов и подучивани€ забытых 
+
 struct LearnNew
 {
 	struct WordToLearn
 	{
-		WordToLearn() : _index(0), _localRightAnswersNum(0) {}
-		explicit WordToLearn(int index) : _index(index), _localRightAnswersNum(0) {}
+		WordToLearn() {}
+		explicit WordToLearn(int index, FromWhatSource fromWhatSource) : _index(index), _fromWhatSource(fromWhatSource) {}
 
-		int  _index;                 // »ндекс изучаемого слова в WordsOnDisk::_words
-		int  _localRightAnswersNum;  //  оличество непрерывных правильных ответов
+		int  _index = 0;                 // »ндекс изучаемого слова в WordsOnDisk::_words
+		int  _localRightAnswersNum = 0;  //  оличество непрерывных правильных ответов
+		FromWhatSource _fromWhatSource = FromWhatSource::NOT_INITIALIZED;
 	};
 
 	LearnNew(LearnWordsApp* learnWordsApp, WordsData* pWordsData) : _learnWordsApp(learnWordsApp), _pWordsData(pWordsData) {}
