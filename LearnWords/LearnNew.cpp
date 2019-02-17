@@ -344,9 +344,11 @@ void LearnNew::learn_forgotten(time_t freezedTime, AdditionalCheck* pAdditionalC
 	{
 		const WordsData::WordInfo& w = _pWordsData->_words[index];
 		clear_console_screen();
+		printf("*** Повторение забытых слов ***\n\n");
 		printf("\n%s\n\n", w.word.c_str());
 		printf("%s", w.translation.c_str());
 		printf("\n");
+		printf("Нажмите пробел\n");
 		char c = 0;
 		do
 		{
@@ -371,6 +373,7 @@ void LearnNew::learn_forgotten(time_t freezedTime, AdditionalCheck* pAdditionalC
 	while (true)
 	{
 		clear_console_screen();
+		printf("*** Повторение забытых слов ***\n\n");
 
 		// Выбрать слово, которое будем показывать
 		WordToLearn wordToLearn;
