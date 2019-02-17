@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include <string>
 #include <fstream>
+#include <Windows.h>
 
 #include "FileOperate.h"
 #include "CommonUtility.h"
@@ -201,9 +202,19 @@ void FileOperate::load_from_file(const char* fullFileName, WordsData* pWordsData
 
 void FileOperate::save_to_file(const char* fullFileName, WordsData* pWordsData)
 {
+	const int NUM_TRIES = 10;
+	const int DURATION_OF_TRIES = 1000;
+
 	FILE* f = nullptr;
-	fopen_s(&f, fullFileName, "wt");
-	if (f == nullptr)
+	int i = 0;
+	for (i = 0; i < NUM_TRIES; i++)
+	{
+		fopen_s(&f, fullFileName, "wt");
+		if (f)
+			break;
+		Sleep(DURATION_OF_TRIES / NUM_TRIES);
+	}
+	if (i == NUM_TRIES)
 		exit_msg("Can't create file %s\n", fullFileName);
 
 	for (const auto& e : pWordsData->_listeningTextsToKeep)
