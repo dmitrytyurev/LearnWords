@@ -110,6 +110,8 @@ int AdditionalCheck::get_word_to_repeat_inner(time_t freezedTime)
 
 	fill_indices_of_random_repeat_words(indicesOfWordsCommon, false, freezedTime);  // Заполним indicesOfWordsCommon
 	fill_indices_of_random_repeat_words(indicesOfWordsFast, true, freezedTime);   // Заполним indicesOfWordsTrue
+logger("      indicesOfWordsCommon.size() = %d\n", indicesOfWordsCommon.size());
+logger("      indicesOfWordsFast.size() = %d\n", indicesOfWordsFast.size());
 
 	if ((rand_float(0, 1) < 0.5f || indicesOfWordsCommon.empty()) && !indicesOfWordsFast.empty())
 	{

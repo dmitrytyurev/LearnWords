@@ -232,7 +232,6 @@ int LearnWordsApp::main_menu_choose_mode(time_t freezedTime)
 	printf("\n");
 	printf("1. Выучить новые слова\n");
 	printf("2. Ежедневный повтор  [%d]\n", wordsTimeToRepeatNum);
-	printf("3. Подучить забытое [%d]\n", (int)_forgottenWordsIndices.size());
 	printf("\n\n");
 
 	printf("Выучено слов: %d, из них хорошо: %d (%d)\n", wordsLearnedTotal, wordsLearnedGood, deltaWordsLearnedGood);
@@ -279,7 +278,7 @@ int LearnWordsApp::main_menu_choose_mode(time_t freezedTime)
 	while (true)
 	{
 		char c = getch_filtered();
-		if (c == 27 || c == '1' || c == '2' || c == '3' || c == '4' || c == '5')  // 27 - Esc
+		if (c == 27 || c == '1' || c == '2')  // 27 - Esc
 			return c;
 		//		printf("%d\n", c);
 	}
@@ -495,9 +494,6 @@ void LearnWordsApp::process(int argc, char* argv[])
 				{
 					_learnNew.learn_forgotten(_freezedTime, &_additionalCheck);
 				} while (!_forgottenWordsIndices.empty());
-			break;
-		case '3':
-			_learnNew.learn_forgotten(_freezedTime, &_additionalCheck);
 			break;
 		default:
 			break;

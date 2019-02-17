@@ -12,6 +12,8 @@ const int TIMES_TO_GUESS_TO_LEARNED = 3;  // —колько раз нужно правильно назвать
 const int TIMES_TO_REPEAT_TO_LEARN  = 2;  // —колько раз при изучении показать все слова сразу с переводом, прежде чем начать показывать без перевода
 const int TIMES_TO_SHOW_A_WORD      = 5;  // —колько шагов открыти€ каждого слова при первичном обучении
 
+extern Log logger;
+
 //===============================================================================================
 // 
 //===============================================================================================
@@ -327,7 +329,6 @@ void LearnNew::learn_new(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 //===============================================================================================
 // 
 //===============================================================================================
-extern Log logger;
 
 void LearnNew::learn_forgotten(time_t freezedTime, AdditionalCheck* pAdditionalCheck)
 {
@@ -479,55 +480,3 @@ void LearnNew::learn_forgotten(time_t freezedTime, AdditionalCheck* pAdditionalC
 		}
 	}
 }
-
-
-/*
-			switch (wordToLearn._fromWhatSource)
-			{
-			case FromWhatSource::FROM_LEANRING_QUEUE:
-				break;
-			case FromWhatSource::FROM_REMEMBERED_LONG:
-				break;
-			case FromWhatSource::FROM_MANDATORY:
-				break;
-			case FromWhatSource::FROM_ADDITIONAL:
-				break;
-			}
-if (c == 72)  // —трелка вверх
-{
-	switch (wordToLearn._fromWhatSource)
-	{
-	case FromWhatSource::FROM_LEANRING_QUEUE:
-		if (++(wordToLearn._localRightAnswersNum) == TIMES_TO_GUESS_TO_LEARNED)
-		{
-			if (are_all_words_learned(learnCycleQueue))
-				return;
-		}
-		put_to_queue(learnCycleQueue, wordToLearn, false);
-		break;
-	case FromWhatSource::FROM_DISTRACTED:
-		pAdditionalCheck->put_word_to_end_of_random_repeat_queue_common(w);
-		_learnWordsApp->save();
-		break;
-	}
-	break;
-}
-else
-if (c == 80) // —трелка вниз
-{
-	switch (wordToLearn._fromWhatSource)
-	{
-	case FromWhatSource::FROM_LEANRING_QUEUE:
-		wordToLearn._localRightAnswersNum = 0;
-		put_to_queue(learnCycleQueue, wordToLearn, false);
-		break;
-	case FromWhatSource::FROM_DISTRACTED:
-		pAdditionalCheck->put_word_to_end_of_random_repeat_queue_common(w);
-		_learnWordsApp->add_forgotten(wordToLearn._index);
-		_learnWordsApp->set_as_forgotten(w);
-		_learnWordsApp->fill_dates_and_save(w, freezedTime, false, false);
-		break;
-	}
-	break;
-}
-*/
